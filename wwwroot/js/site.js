@@ -486,6 +486,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Remember exclude past answers checkbox preference
+document.addEventListener('DOMContentLoaded', function() {
+    const excludePastAnswersCheckbox = document.getElementById('excludePastAnswers');
+    
+    if (!excludePastAnswersCheckbox) return;
+    
+    // Load saved preference
+    const savedPreference = localStorage.getItem('excludePastAnswers');
+    if (savedPreference !== null) {
+        excludePastAnswersCheckbox.checked = savedPreference === 'true';
+    }
+    
+    // Save preference when changed
+    excludePastAnswersCheckbox.addEventListener('change', function() {
+        localStorage.setItem('excludePastAnswers', this.checked.toString());
+    });
+});
+
 // Dark Mode Toggle
 document.addEventListener('DOMContentLoaded', function() {
     const darkModeToggle = document.getElementById('darkModeToggle');
