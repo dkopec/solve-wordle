@@ -626,11 +626,19 @@ public class WordleSolver
         // 6. Unique letter bonus (diverse letters still valuable)
         if (uniqueLetters.Count == 5)
         {
-            score *= 1.3;
+            score *= 1.3; // Bonus for all unique letters
         }
-        else if (uniqueLetters.Count < 4)
+        else if (uniqueLetters.Count == 4)
         {
-            score *= 0.5; // Penalty for repeated letters
+            score *= 1.0; // Neutral for one repeated letter (very common in Wordle)
+        }
+        else if (uniqueLetters.Count == 3)
+        {
+            score *= 0.7; // Moderate penalty for two repeated letters
+        }
+        else
+        {
+            score *= 0.4; // Heavy penalty for 3+ repeated letters
         }
         
         // 7. Bonus if word was actually a past answer (pattern match)

@@ -19,7 +19,7 @@ public class IndexModel : PageModel
     public string? ExcludedLetters { get; set; }
 
     [BindProperty]
-    public bool ExcludePastAnswers { get; set; } = true;
+    public bool ExcludePastAnswers { get; set; } = false;
 
     public List<WordSuggestion>? PossibleWords { get; set; }
     public List<WordSuggestion>? StrategicWords { get; set; }

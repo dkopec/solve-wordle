@@ -102,8 +102,11 @@
             <input type="checkbox" class="form-check-input" id="excludePastAnswers" name="excludePastAnswers" 
                    checked="@Model.ExcludePastAnswers" value="true">
             <label class="form-check-label" for="excludePastAnswers">
-                Exclude previous Wordle answers (recommended)
+                Exclude previous Wordle answers
             </label>
+            <small class="form-text text-muted d-block">
+                Note: While Wordle rarely reuses past answers, it can happen. Uncheck this if you're not finding expected words.
+            </small>
         </div>
 
         <div class="d-flex gap-2">

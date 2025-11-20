@@ -57,9 +57,13 @@ This solver uses multiple aggressive strategies to quickly identify the most lik
 - S, C, P, T, A, B, R, L, M, F are common starters
 - Slight boost for words starting with these
 
-### 11. **Unique Letter Diversity (Multiplier: 1.3x)** 🌈
-- Bonus for 5 unique letters
-- Penalty (0.5x) for repeated letters
+### 11. **Unique Letter Diversity** 🌈
+- **5 unique letters** (1.3x multiplier): All unique - ideal for exploration
+- **4 unique letters** (1.0x - neutral): One repeated letter - very common in Wordle
+  - Examples: BATTY, FIZZY, HAPPY, PUPPY, GRASS
+  - Many Wordle answers have double letters
+- **3 unique letters** (0.7x penalty): Two repeated letters - less common
+- **2 or fewer unique letters** (0.4x penalty): Heavy repetition - very rare
 
 ## Why Word Commonality Matters Most
 
