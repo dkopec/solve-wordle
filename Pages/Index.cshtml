@@ -129,7 +129,13 @@
                 </h4>
                 <small class="text-muted">Ranked by statistical likelihood - Top suggestion is most probable</small>
             </div>
-            @if (Model.PossibleWords.Count <= 5)
+            @if (Model.PossibleWords.Count == 1)
+            {
+                <span class="badge bg-success fs-5 px-4 py-2">
+                    <i class="bi bi-trophy-fill"></i> SOLVED!
+                </span>
+            }
+            else if (Model.PossibleWords.Count <= 5)
             {
                 <span class="badge bg-success fs-5 px-4 py-2">
                     <i class="bi bi-bullseye"></i> CLOSE!

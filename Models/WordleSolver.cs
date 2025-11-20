@@ -395,7 +395,7 @@ public class WordleSolver
     private double CalculateConfidence(double score, double maxScore, double minScore, double scoreRange, int totalWords)
     {
         if (totalWords == 1)
-            return 98.0; // Very high confidence if only one word
+            return 100.0; // Perfect confidence if only one word
 
         if (scoreRange == 0)
             return 60.0; // Moderate confidence if all equal
