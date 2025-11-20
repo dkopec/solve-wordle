@@ -6,14 +6,17 @@ This solver uses multiple aggressive strategies to quickly identify the most lik
 ## Scoring Factors (Highest to Lowest Weight)
 
 ### 1. **Word Commonality (Weight: 2.0x + multipliers up to 1.5x)** 🌟
-- **Past Wordle answers**: 1000 points + 1.5x multiplier = HIGHEST priority
+- **Past Wordle answers that are also common words** (e.g., APPLE, STARE, AROSE): 1300 points + 1.5x multiplier = HIGHEST priority
+  - These are the sweet spot: proven Wordle words that people use daily
+- **Past Wordle answers (less common)** (e.g., AMPLE, AGORA, CYNIC): 1000 points + 1.5x multiplier
+  - Proven Wordle words but less common in everyday speech
 - **Common English words** (curated frequency list): 900-400 points + 1.3x multiplier
   - Words ranked by actual usage frequency in English
-  - Includes everyday words like GRAVE, STARE, ABOUT, HEART, etc.
+  - Includes everyday words like GRAVE, ABOUT, HEART, etc.
   - Excludes obscure/technical terms like BRANE, ZOEAE, etc.
 - **Other valid words**: 0-100 points + penalties for very obscure words
 - Prioritizes words people actually use and Wordle typically selects
-- Based on three-tier system: Past answers → Common words → Rare words
+- Three-tier system with bonus for common past answers
 
 ### 2. **Trigram Analysis (Weight: 4.0x)** 🔥
 - Analyzes 3-letter sequences from past Wordle answers

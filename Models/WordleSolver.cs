@@ -59,6 +59,12 @@ public class WordleSolver
                 var commonScore = 900.0 - (i * 500.0 / Math.Max(1, commonWordsList.Count));
                 _wordCommonality[word] = Math.Max(400, commonScore);
             }
+            else
+            {
+                // Word is BOTH a past answer AND a common word - give extra boost
+                // This ensures APPLE ranks higher than AMPLE
+                _wordCommonality[word] += 300.0; // Bonus for being common + past answer
+            }
         }
         
         // 3. All other words - LOWER priority (based on position in master list)
