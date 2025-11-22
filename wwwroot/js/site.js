@@ -377,8 +377,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Handle backspace
             box.addEventListener('keydown', function(e) {
-                if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                    boxes[index - 1].focus();
+                if (e.key === 'Backspace' && !e.target.value) {
+                    if (index > 0) {
+                        boxes[index - 1].focus();
+                    } else {
+                        // At the first box of a row, move to previous row's last box
+                        const allRows = document.querySelectorAll('.excluded-letter-row');
+                        const currentRowIndex = Array.from(allRows).indexOf(rowDiv);
+                        
+                        if (currentRowIndex > 0) {
+                            const prevRow = allRows[currentRowIndex - 1];
+                            const prevBoxes = prevRow.querySelectorAll('.excluded-letter-box');
+                            prevBoxes[prevBoxes.length - 1].focus();
+                        }
+                    }
                 }
                 else if (e.key === 'ArrowLeft' && index > 0) {
                     boxes[index - 1].focus();
@@ -435,6 +447,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     boxIndex++;
                 }
             });
+            
+            // Always create one more empty row at the end
+            createExcludedLetterRow();
         } else {
             // Create one empty row by default
             createExcludedLetterRow();

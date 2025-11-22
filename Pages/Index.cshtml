@@ -4,7 +4,7 @@
     ViewData["Title"] = "Wordle Solver";
 }
 
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <h1 class="mb-4">Wordle Solver</h1>
     <p class="lead">Enter your Wordle clues to find possible words!</p>
 
@@ -50,7 +50,9 @@
         }
     }
 
-    <form method="post" class="mb-4" id="wordleForm">
+    <div class="row">
+        <div class="col-lg-6 col-xl-5 mb-4">
+            <form method="post" class="mb-4" id="wordleForm">
         <div class="mb-3">
             <label class="form-label">Correct Letters (Green)</label>
             <div class="d-flex gap-2 mb-2" id="letterBoxes">
@@ -118,7 +120,9 @@
             </button>
         </div>
     </form>
+        </div>
 
+        <div class="col-lg-6 col-xl-7">
     @if (Model.PossibleWords != null && Model.PossibleWords.Any())
     {
         <div class="alert alert-success d-flex justify-content-between align-items-center">
@@ -149,7 +153,7 @@
             }
         </div>
         
-        @if (Model.StrategicWords != null && Model.StrategicWords.Any())
+        @if (Model.StrategicWords != null && Model.StrategicWords.Any() && Model.PossibleWords.Count > 1)
         {
             <div class="alert alert-warning mb-3">
                 <h5 class="alert-heading mb-3">
@@ -197,7 +201,7 @@
             </div>
         }
         
-        @if (Model.PossibleWords.Count <= 3 && Model.PossibleWords.First().ConfidencePercentage >= 75)
+        @if (Model.PossibleWords.Count > 1 && Model.PossibleWords.Count <= 3 && Model.PossibleWords.First().ConfidencePercentage >= 75)
         {
             <div class="alert alert-info mb-3">
                 <strong><i class="bi bi-stars"></i> Strong recommendation:</strong> 
@@ -270,4 +274,6 @@
             <i class="bi bi-exclamation-triangle"></i> No matching words found. Try adjusting your clues.
         </div>
     }
+        </div>
+    </div>
 </div>
