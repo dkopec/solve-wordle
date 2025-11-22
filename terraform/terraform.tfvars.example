@@ -1,0 +1,26 @@
+# Copy this file to terraform.tfvars and customize for your deployment
+# DO NOT commit terraform.tfvars to version control
+# NOTE: project_name and container_image are automatically set by GitHub Actions
+#       Resources are named using Azure naming conventions via Azure/naming module
+
+# Optional: Override the project name (defaults to GitHub repo name)
+# project_name = "my-custom-name"
+
+# Optional: Override container image (defaults to built image from CI/CD)
+# container_image = "myregistry.azurecr.io/myapp:latest"
+
+location                    = "eastus"  # or westus2, centralus, westeurope, etc.
+environment                 = "production"
+enable_application_insights = true
+
+# Container resource allocation
+container_cpu    = 0.25   # CPU cores: 0.25, 0.5, 0.75, 1.0, etc.
+container_memory = "0.5Gi" # Memory: 0.5Gi, 1.0Gi, 1.5Gi, 2.0Gi, etc.
+
+# Scaling configuration
+min_replicas = 0  # Set to 0 for scale-to-zero (cost savings)
+max_replicas = 1  # Maximum concurrent instances
+
+tags = {
+  Environment = "Production"
+}
