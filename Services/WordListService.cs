@@ -2,56 +2,60 @@ namespace solve_wordle.Services;
 
 public class WordListService
 {
-    private readonly List<string> _words;
-    private readonly HashSet<string> _pastAnswers;
-    private readonly HashSet<string> _commonWords;
+    private readonly HttpClient _httpClient;
+    private List<string>? _words;
+    private HashSet<string>? _pastAnswers;
+    private HashSet<string>? _commonWords;
+    private bool _isInitialized = false;
 
-    public WordListService(IWebHostEnvironment env)
+    public WordListService(HttpClient httpClient)
     {
-        var wordFilePath = Path.Combine(env.ContentRootPath, "Data", "words.txt");
-        var pastAnswersPath = Path.Combine(env.ContentRootPath, "Data", "past-answers.txt");
-        var commonWordsPath = Path.Combine(env.ContentRootPath, "Data", "common-words.txt");
-        
-        if (File.Exists(wordFilePath))
+        _httpClient = httpClient;
+    }
+
+    public async Task InitializeAsync()
+    {
+        if (_isInitialized)
+            return;
+
+        try
         {
-            _words = File.ReadAllLines(wordFilePath)
+            // Load words
+            var wordsText = await _httpClient.GetStringAsync("data/words.txt");
+            _words = wordsText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Where(w => !string.IsNullOrWhiteSpace(w) && w.Length == 5)
                 .Select(w => w.ToLower().Trim())
                 .Distinct()
                 .OrderBy(w => w)
                 .ToList();
+
+            // Load past answers
+            var pastAnswersText = await _httpClient.GetStringAsync("data/past-answers.txt");
+            _pastAnswers = pastAnswersText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => !string.IsNullOrWhiteSpace(w) && w.Length == 5)
+                .Select(w => w.ToLower().Trim())
+                .ToHashSet();
+
+            // Load common words
+            var commonWordsText = await _httpClient.GetStringAsync("data/common-words.txt");
+            _commonWords = commonWordsText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => !string.IsNullOrWhiteSpace(w) && w.Length == 5)
+                .Select(w => w.ToLower().Trim())
+                .ToHashSet();
+
+            _isInitialized = true;
         }
-        else
+        catch (Exception)
         {
+            // Fallback to empty lists if files can't be loaded
             _words = new List<string>();
-        }
-
-        if (File.Exists(pastAnswersPath))
-        {
-            _pastAnswers = File.ReadAllLines(pastAnswersPath)
-                .Where(w => !string.IsNullOrWhiteSpace(w) && w.Length == 5)
-                .Select(w => w.ToLower().Trim())
-                .ToHashSet();
-        }
-        else
-        {
             _pastAnswers = new HashSet<string>();
-        }
-
-        if (File.Exists(commonWordsPath))
-        {
-            _commonWords = File.ReadAllLines(commonWordsPath)
-                .Where(w => !string.IsNullOrWhiteSpace(w) && w.Length == 5)
-                .Select(w => w.ToLower().Trim())
-                .ToHashSet();
-        }
-        else
-        {
             _commonWords = new HashSet<string>();
+            _isInitialized = true;
         }
     }
 
-    public List<string> GetWords() => _words;
-    public HashSet<string> GetPastAnswers() => _pastAnswers;
-    public HashSet<string> GetCommonWords() => _commonWords;
+    public List<string> GetWords() => _words ?? new List<string>();
+    public HashSet<string> GetPastAnswers() => _pastAnswers ?? new HashSet<string>();
+    public HashSet<string> GetCommonWords() => _commonWords ?? new HashSet<string>();
 }
