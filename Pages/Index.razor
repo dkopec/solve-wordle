@@ -413,7 +413,7 @@
         }
     }
 
-    private void OnCorrectLetterInput(int index, ChangeEventArgs e)
+    private async Task OnCorrectLetterInput(int index, ChangeEventArgs e)
     {
         var value = e.Value?.ToString()?.ToUpper() ?? "";
         if (value.Length > 0 && !char.IsLetter(value[0]))
@@ -421,7 +421,14 @@
             correctLetters[index] = "";
             return;
         }
-        correctLetters[index] = value.Length > 0 ? value.Substring(0, 1) : "";
+        var letter = value.Length > 0 ? value.Substring(0, 1) : "";
+        correctLetters[index] = letter;
+        
+        // Auto-focus to next box when letter is entered
+        if (!string.IsNullOrEmpty(letter) && index < 4)
+        {
+            await JS.InvokeVoidAsync("focusElement", $"correct-{index + 1}");
+        }
     }
 
     private async Task OnCorrectLetterKeyDown(int index, KeyboardEventArgs e)
@@ -440,7 +447,7 @@
         }
     }
 
-    private void OnWrongPosInput(int row, int pos, ChangeEventArgs e)
+    private async Task OnWrongPosInput(int row, int pos, ChangeEventArgs e)
     {
         var value = e.Value?.ToString()?.ToUpper() ?? "";
         if (value.Length > 0 && !char.IsLetter(value[0]))
@@ -448,7 +455,14 @@
             wrongPositionRows[row][pos] = "";
             return;
         }
-        wrongPositionRows[row][pos] = value.Length > 0 ? value.Substring(0, 1) : "";
+        var letter = value.Length > 0 ? value.Substring(0, 1) : "";
+        wrongPositionRows[row][pos] = letter;
+        
+        // Auto-focus to next box when letter is entered
+        if (!string.IsNullOrEmpty(letter) && pos < 4)
+        {
+            await JS.InvokeVoidAsync("focusElement", $"wrong-{row}-{pos + 1}");
+        }
     }
 
     private async Task OnWrongPosKeyDown(int row, int pos, KeyboardEventArgs e)
@@ -480,7 +494,7 @@
         }
     }
 
-    private void OnExcludedLetterInput(int row, int pos, ChangeEventArgs e)
+    private async Task OnExcludedLetterInput(int row, int pos, ChangeEventArgs e)
     {
         var value = e.Value?.ToString()?.ToUpper() ?? "";
         if (value.Length > 0 && !char.IsLetter(value[0]))
@@ -509,10 +523,27 @@
 
         excludedLetterRows[row][pos] = letter;
 
-        // Auto-add new row if last position of last row
-        if (!string.IsNullOrEmpty(letter) && row == excludedLetterRows.Count - 1 && pos == 4)
+        // Auto-focus to next box when letter is entered
+        if (!string.IsNullOrEmpty(letter))
         {
-            excludedLetterRows.Add(new string[5] { "", "", "", "", "" });
+            if (pos < 4)
+            {
+                // Move to next position in same row
+                await JS.InvokeVoidAsync("focusElement", $"excluded-{row}-{pos + 1}");
+            }
+            else if (row == excludedLetterRows.Count - 1)
+            {
+                // Last position of last row - add new row and focus first box
+                excludedLetterRows.Add(new string[5] { "", "", "", "", "" });
+                StateHasChanged(); // Ensure the new row is rendered
+                await Task.Delay(50); // Give Blazor time to render
+                await JS.InvokeVoidAsync("focusElement", $"excluded-{row + 1}-0");
+            }
+            else
+            {
+                // Move to first position of next row
+                await JS.InvokeVoidAsync("focusElement", $"excluded-{row + 1}-0");
+            }
         }
     }
 
