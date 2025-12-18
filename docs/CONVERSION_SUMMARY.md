@@ -84,14 +84,6 @@ bin/Release/net9.0/publish/wwwroot/
 
 This entire folder can be hosted on any static web server!
 
-### Technology Stack
-
-- .NET 9.0
-- Blazor WebAssembly
-- C# (runs in browser via WebAssembly)
-- Bootstrap 5.3.3
-- Bootstrap Icons 1.11.3
-
 ### Advantages of Blazor WASM
 
 ✅ **No Server Needed**: Runs entirely in browser  

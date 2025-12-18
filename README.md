@@ -65,41 +65,13 @@ If you're using Visual Studio Code:
 3. **Excluded Letters**: Enter letters to exclude
    - Example: `xyz` means x, y, and z are not in the solution
 
-## Project Structure
+## Technologies
 
-```
-solve-wordle/
-├── Pages/
-│   └── Index.razor            # Main Blazor component
-├── Models/
-│   └── WordleSolver.cs        # Word filtering logic
-├── Services/
-│   └── WordListService.cs     # HTTP-based word list loader
-├── Shared/
-│   └── MainLayout.razor       # Application layout
-├── wwwroot/
-│   ├── data/                  # Word list files
-│   │   ├── words.txt          # Full dictionary
-│   │   ├── common-words.txt   # Common words only
-│   │   └── past-answers.txt   # Previous Wordle answers
-│   ├── css/site.css           # Custom styles with dark mode
-│   ├── js/site.js             # Auto-focus JavaScript
-│   └── index.html             # WASM host page
-├── .github/workflows/
-│   └── deploy.yml             # GitHub Pages deployment
-├── Program.cs                 # WASM entry point
-└── README.md                  # This file
-```
+- **Framework**: .NET 9.0 with Blazor WebAssembly
+- **UI**: Bootstrap 5.3.3 with Dark Mode
+- **Deployment**: GitHub Pages via GitHub Actions
 
-## Technologies Used
-
-- .NET 9.0
-- Blazor WebAssembly
-- Bootstrap 5.3.3 with Dark Mode
-- Bootstrap Icons 1.11.3
-- JavaScript Interop
-- GitHub Actions
-- C#
+For detailed project structure and conventions, see [docs/CONVENTIONS.md](docs/CONVENTIONS.md).
 
 ## How It Works
 
@@ -115,7 +87,18 @@ The filtering algorithm efficiently narrows down possibilities to help you solve
 
 This application is automatically deployed to GitHub Pages using GitHub Actions. Every push to the `main` branch triggers a build and deployment.
 
-See [BLAZOR_DEPLOYMENT.md](BLAZOR_DEPLOYMENT.md) for deployment details and [QUICKSTART.md](QUICKSTART.md) for quick setup instructions.
+See [docs/BLAZOR_DEPLOYMENT.md](docs/BLAZOR_DEPLOYMENT.md) for deployment details and [docs/QUICKSTART.md](docs/QUICKSTART.md) for quick setup instructions.
+
+## Documentation
+
+For detailed technical documentation, see the [docs/](docs/) folder:
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design and data flow
+- **[docs/CONVENTIONS.md](docs/CONVENTIONS.md)** - Coding standards and style guide
+- **[docs/DECISIONS.md](docs/DECISIONS.md)** - Architectural decision records
+- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[docs/SCORING_STRATEGIES.md](docs/SCORING_STRATEGIES.md)** - Word scoring algorithms
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history
 
 ## License
 

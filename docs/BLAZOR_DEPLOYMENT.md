@@ -58,9 +58,4 @@ The output will be in `bin/Release/net9.0/publish/wwwroot/`
 - ✅ **HTTP-based data loading**: Word lists loaded via HttpClient
 - ✅ **GitHub Pages ready**: Automatic deployment pipeline configured
 
-### Technologies Used
-
-- .NET 9.0
-- Blazor WebAssembly
-- Bootstrap 5.3.3
-- Bootstrap Icons 1.11.3
+---

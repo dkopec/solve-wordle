@@ -17,15 +17,13 @@ The application runs entirely in the browser and is deployed to GitHub Pages.
 - JavaScript Interop for DOM manipulation
 
 ## Project Structure
-- Pages/ - Blazor components (Index.razor)
-- Models/ - Data models and word filtering logic (WordleSolver.cs)
-- Services/ - Services for data loading (WordListService.cs using HttpClient)
-- Shared/ - Shared Blazor components (MainLayout.razor)
-- wwwroot/ - Static files (CSS, JS, data files)
-  - wwwroot/data/ - Word list dictionaries (words.txt, common-words.txt, past-answers.txt)
-  - wwwroot/css/ - Custom styling including dark mode
-  - wwwroot/js/ - JavaScript functions for auto-focus functionality
-- .github/workflows/ - GitHub Actions for automated deployment
+- **Pages/** - Blazor components (Index.razor)
+- **Models/** - Domain logic (WordleSolver.cs)
+- **Services/** - Data loading (WordListService.cs using HttpClient)
+- **wwwroot/data/** - Word lists (words.txt, common-words.txt, past-answers.txt)
+- **docs/** - Technical documentation
+
+See [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) for complete architecture details and [../docs/CONVENTIONS.md](../docs/CONVENTIONS.md) for file organization principles.
 
 ## Key Features
 - **Dark Mode Toggle**: Persistent theme selection using localStorage
@@ -43,3 +41,11 @@ The application runs entirely in the browser and is deployed to GitHub Pages.
 - Use JavaScript Interop sparingly and only when necessary
 - Test auto-focus and DOM manipulation thoroughly
 - Maintain dark mode compatibility in all UI elements
+
+## Additional Documentation
+For detailed technical documentation, see the docs/ folder:
+- [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) - System design and data flow
+- [../docs/CONVENTIONS.md](../docs/CONVENTIONS.md) - Coding standards and style guide
+- [../docs/DECISIONS.md](../docs/DECISIONS.md) - Architectural decision records
+- [../docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [../docs/SCORING_STRATEGIES.md](../docs/SCORING_STRATEGIES.md) - Word scoring algorithms
