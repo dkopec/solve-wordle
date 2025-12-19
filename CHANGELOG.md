@@ -8,12 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automated release workflow triggered by version tags
+  - Creates GitHub releases automatically
+  - Generates release archives (ZIP)
+  - Extracts changelog notes for each release
+  - Deploys to GitHub Pages on release
 - Comprehensive documentation for AI-assisted development workflow
   - docs/ARCHITECTURE.md - System design and data flow documentation
   - docs/CONVENTIONS.md - Coding standards and naming conventions
   - docs/DECISIONS.md - Architectural decision records (ADR)
   - docs/TROUBLESHOOTING.md - Common issues and solutions
   - CHANGELOG.md - Version history tracking
+
+### Removed
+- Docker build process (not needed for Blazor WebAssembly)
+  - Removed .github/workflows/docker-publish.yml
+  - Removed Dockerfile
+  - Removed .dockerignore
 
 ## [1.0.0] - 2025-12-18
 
@@ -70,12 +81,15 @@ This project uses [Semantic Versioning](https://semver.org/):
 Changes in `main` branch not yet released will be listed in the `[Unreleased]` section above.
 
 ### Release Process
-1. Update CHANGELOG.md with new version section
-2. Update version in solve-wordle.csproj
-3. Commit changes: `git commit -m "chore: release v1.1.0"`
-4. Create git tag: `git tag -a v1.1.0 -m "Release v1.1.0"`
-5. Push changes: `git push origin main --tags`
-6. GitHub Actions will automatically deploy to GitHub Pages
+1. Update CHANGELOG.md with new version section (move items from [Unreleased])
+2. Commit changes: `git commit -m "chore: prepare release v1.1.0"`
+3. Create and push git tag: `git tag v1.1.0 && git push origin main --tags`
+4. GitHub Actions will automatically:
+   - Update version in solve-wordle.csproj
+   - Build and publish the application
+   - Create a GitHub release with changelog notes
+   - Deploy to GitHub Pages
+   - Attach release archive (ZIP)
 
 ---
 
