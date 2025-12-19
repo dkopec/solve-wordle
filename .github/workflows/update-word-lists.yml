@@ -1,0 +1,111 @@
+name: Update Word Lists
+
+on:
+  # Run every Monday at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 1'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update even if no changes detected'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-words:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml
+      
+      - name: Run update script
+        id: update
+        run: |
+          python Scripts/update-word-lists.py
+          
+          # Check if files were modified
+          if git diff --quiet Data/ wwwroot/data/; then
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+            echo "No changes detected in word lists"
+          else
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in word lists"
+          fi
+      
+      - name: Display changes
+        if: steps.update.outputs.changes_detected == 'true'
+        run: |
+          echo "=== Git Status ==="
+          git status
+          echo ""
+          echo "=== Changes to Data files ==="
+          git diff --stat Data/ wwwroot/data/
+          echo ""
+          echo "=== Detailed diff ==="
+          git diff Data/ wwwroot/data/
+      
+      - name: Commit and push changes
+        if: steps.update.outputs.changes_detected == 'true' || github.event.inputs.force_update == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Get current date for commit message
+          TODAY=$(date +%Y-%m-%d)
+          
+          git add Data/past-answers.txt wwwroot/data/past-answers.txt
+          git add Data/common-words.txt wwwroot/data/common-words.txt
+          git add Data/words.txt wwwroot/data/words.txt
+          
+          git commit -m "chore(data): auto-update word lists - $TODAY" \
+                     -m "Updated by GitHub Actions workflow" \
+                     -m "- Updated past Wordle answers" \
+                     -m "- Refreshed common words list" \
+                     -m "- Updated comprehensive word list"
+          
+          git push
+      
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## Word List Update Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.update.outputs.changes_detected }}" == "true" ]; then
+            echo "✅ **Changes detected and committed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Modified Files:" >> $GITHUB_STEP_SUMMARY
+            git diff --name-only HEAD~1 HEAD | grep -E "(Data/|wwwroot/data/)" >> $GITHUB_STEP_SUMMARY || echo "No files modified" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ **No changes detected**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Word lists are already up to date." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Data File Stats:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Line Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| words.txt | $(wc -l < Data/words.txt) |" >> $GITHUB_STEP_SUMMARY
+          echo "| common-words.txt | $(wc -l < Data/common-words.txt) |" >> $GITHUB_STEP_SUMMARY
+          echo "| past-answers.txt | $(wc -l < Data/past-answers.txt) |" >> $GITHUB_STEP_SUMMARY

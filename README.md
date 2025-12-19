@@ -89,6 +89,16 @@ This application is automatically deployed to GitHub Pages using GitHub Actions.
 
 See [docs/BLAZOR_DEPLOYMENT.md](docs/BLAZOR_DEPLOYMENT.md) for deployment details and [docs/QUICKSTART.md](docs/QUICKSTART.md) for quick setup instructions.
 
+## Word List Updates
+
+The application includes an **automated word list update system** that:
+- 🔄 Runs weekly via GitHub Actions
+- 📥 Fetches latest Wordle answers from NYTimes
+- ✅ Updates past-answers.txt with new daily puzzles
+- 🚀 Automatically deploys changes to GitHub Pages
+
+You can also trigger updates manually or run locally. See [docs/AUTO_UPDATE.md](docs/AUTO_UPDATE.md) for details.
+
 ## Documentation
 
 For detailed technical documentation, see the [docs/](docs/) folder:
@@ -96,6 +106,7 @@ For detailed technical documentation, see the [docs/](docs/) folder:
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design and data flow
 - **[docs/CONVENTIONS.md](docs/CONVENTIONS.md)** - Coding standards and style guide
 - **[docs/DECISIONS.md](docs/DECISIONS.md)** - Architectural decision records
+- **[docs/AUTO_UPDATE.md](docs/AUTO_UPDATE.md)** - Automated word list updates
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[docs/SCORING_STRATEGIES.md](docs/SCORING_STRATEGIES.md)** - Word scoring algorithms
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history

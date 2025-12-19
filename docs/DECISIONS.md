@@ -355,6 +355,55 @@ Implement multiple scoring strategies (see SCORING_STRATEGIES.md) with user sele
 
 ---
 
+## ADR-012: Automate Word List Updates via GitHub Actions
+
+**Date**: 2025-12-19 (Automated data maintenance)  
+**Status**: Accepted
+
+### Context
+Word lists need periodic updates as new Wordle answers are published daily. Options:
+1. Manual updates (edit files, commit, push)
+2. GitHub Actions scheduled workflow
+3. Azure Functions with timer trigger
+4. External service polling and updating
+
+### Decision
+Use GitHub Actions with weekly scheduled workflow to automatically fetch and update word lists.
+
+### Consequences
+**Positive:**
+- ✅ Zero manual maintenance required
+- ✅ Free within GitHub Actions limits
+- ✅ Integrated with existing CI/CD pipeline
+- ✅ Automatic deployment after updates
+- ✅ Version controlled updates with clear history
+- ✅ Can be triggered manually on demand
+- ✅ Cross-platform (Python) and Windows (PowerShell) scripts
+
+**Negative:**
+- ❌ Depends on NYTimes data source availability
+- ❌ Weekly schedule may miss immediate updates
+- ❌ Requires maintaining scraper/fetcher scripts
+- ❌ GitHub Actions usage (minimal - ~4 min/month)
+
+**Implementation:**
+- Workflow: `.github/workflows/update-word-lists.yml`
+- Python script: `Scripts/update-word-lists.py` (cross-platform)
+- PowerShell script: `Scripts/update-word-lists.ps1` (Windows)
+- Schedule: Every Monday at 2:00 AM UTC
+- Manual trigger: Available via workflow_dispatch
+
+**Data Sources:**
+1. NYTimes Wordle JSON endpoint (primary)
+2. Wordle JavaScript bundle (fallback)
+3. Scrabble dictionary (comprehensive words)
+4. Existing files (last resort)
+
+**See Also:**
+- [docs/AUTO_UPDATE.md](AUTO_UPDATE.md) - Complete documentation
+
+---
+
 ## Deprecated Decisions
 
 ### ADR-XXX: [None yet]
