@@ -1,152 +1,29 @@
-# Changelog
+## 1.1.0 (2026-01-20)
 
-All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Features
 
-## [Unreleased]
+* add Docker support for word list updater with detailed README and docker-compose configuration ([cf9803f](https://github.com/dkopec/solve-wordle/commit/cf9803f8b3188df3f73a535fe87751df228f3654))
+* Add Dockerfile and setup scripts for Azure deployment with GitHub Actions and Terraform ([bc72b69](https://github.com/dkopec/solve-wordle/commit/bc72b693f52856b721569c75f5ae2ffb49e856a0))
+* implement automated word list updates with GitHub Actions and Python scripts ([3a8a55f](https://github.com/dkopec/solve-wordle/commit/3a8a55fa0abbb1ad4134cd972a99c17b9031e14a))
 
-### Added
-- Automated release workflow triggered by version tags
-  - Creates GitHub releases automatically
-  - Generates release archives (ZIP)
-  - Extracts changelog notes for each release
-  - Deploys to GitHub Pages on release
-- Comprehensive documentation for AI-assisted development workflow
-  - docs/ARCHITECTURE.md - System design and data flow documentation
-  - docs/CONVENTIONS.md - Coding standards and naming conventions
-  - docs/DECISIONS.md - Architectural decision records (ADR)
-  - docs/TROUBLESHOOTING.md - Common issues and solutions
-  - CHANGELOG.md - Version history tracking
 
-### Removed
-- Docker build process (not needed for Blazor WebAssembly)
-  - Removed .github/workflows/docker-publish.yml
-  - Removed Dockerfile
-  - Removed .dockerignore
+### Bug Fixes
 
-## [1.0.0] - 2025-12-18
+* **ci:** add version.json to support conventional changelog action ([85a3c8d](https://github.com/dkopec/solve-wordle/commit/85a3c8da8d70e296c1a8d331119b33bd729a113b))
+* common word order ([07abc4c](https://github.com/dkopec/solve-wordle/commit/07abc4ce0824556c0f7fd83cc5adab48eda54c25))
+* common words not getting properly sorted ([f79c139](https://github.com/dkopec/solve-wordle/commit/f79c13924ebce716826c037a3abbcd75e569a290))
+* enhance dark mode styles for toggle button and body background ([cde58e1](https://github.com/dkopec/solve-wordle/commit/cde58e1d519ed03d4ee88669534917aec913238b))
+* enhance scoring for common past Wordle answers ([fa9781e](https://github.com/dkopec/solve-wordle/commit/fa9781eb01bd47756d8d1ab71b57e35c4ed082fe))
+* ensure version number is correctly specified in project file ([05e9a35](https://github.com/dkopec/solve-wordle/commit/05e9a3592997a5490890e4972daff474bcf4ca4d))
+* grey boxes having issues when typing fast ([8e800c8](https://github.com/dkopec/solve-wordle/commit/8e800c822f15ca820d206cb98cac99d5bf304427))
+* improve backspace navigation in excluded letters and ensure an additional empty row is created ([d6da926](https://github.com/dkopec/solve-wordle/commit/d6da926088a82051cfeb8fa54f96a3952b5adf44))
+* make message say solved when only 1 answer left ([065150c](https://github.com/dkopec/solve-wordle/commit/065150c7b5fc4e06dddf398105a6faac00599e79))
+* make the scripts actually update common words order ([c2c41d4](https://github.com/dkopec/solve-wordle/commit/c2c41d496827c9093a57fc7fd1fd125b306eeb4a))
+* remember user selection of exclude past wordle answers ([355c36a](https://github.com/dkopec/solve-wordle/commit/355c36a03c9405ffb468b99f31c0e33ad6a50b6b))
+* remove redundant folder ([92b595d](https://github.com/dkopec/solve-wordle/commit/92b595daf1009976754c30a40bbb0ef5171bfa73))
+* remove terraform, just build image ([75475e5](https://github.com/dkopec/solve-wordle/commit/75475e554552dace6d76bb5b8602239307f6d5af))
+* tracking of build artifacts ([ec6618d](https://github.com/dkopec/solve-wordle/commit/ec6618dbc80ca3ebe2e071b2262c34210460882a))
+* update project documentation to reflect Blazor WebAssembly architecture and features ([bdc379a](https://github.com/dkopec/solve-wordle/commit/bdc379af314d69231ff8aea82e1f76ac0154e8b2))
+* word not showing when past answers unchecked ([87de9d9](https://github.com/dkopec/solve-wordle/commit/87de9d9198f792420fa5d090dc80b3b30ef36fb3))
 
-### Added
-- Initial release of Wordle Solver Blazor WebAssembly application
-- Dark mode toggle with persistent preference in localStorage
-- Side-by-side layout with sticky input column
-- Multiple input methods:
-  - Visual 5x6 grid for correct position letters (green)
-  - Dynamic rows for wrong position letters (yellow)
-  - Dynamic rows for excluded letters (gray)
-- Auto-focus advancement in letter grids using JavaScript interop
-- Smart word suggestions with multiple scoring strategies:
-  - Letter frequency analysis
-  - Position-specific frequency
-  - Vowel distribution scoring
-  - Common word prioritization
-  - Past Wordle answer weighting
-- Three word list datasets:
-  - Complete word list (~13,000 words)
-  - Common English words (~3,000 words)
-  - Historical Wordle answers (~2,800 words)
-- GitHub Pages deployment via GitHub Actions
-- Responsive UI with Bootstrap 5.3.3
-- Bootstrap Icons integration
-
-### Documentation
-- README.md with features and usage instructions
-- docs/QUICKSTART.md for rapid Azure deployment
-- docs/SCORING_STRATEGIES.md detailing suggestion algorithms
-- docs/BLAZOR_DEPLOYMENT.md for deployment options
-- docs/CONVERSION_SUMMARY.md documenting migration history
-- .github/copilot-instructions.md for AI assistant context
-
-### Technical
-- Built on .NET 9.0 and Blazor WebAssembly
-- Client-side word filtering with efficient algorithms (O(n) complexity)
-- HttpClient-based data loading for browser compatibility
-- Singleton WordListService for data caching
-- Frequency analysis pre-computation for fast suggestions
-- Zero backend dependencies - pure static site
-
----
-
-## Version History
-
-### Versioning Scheme
-This project uses [Semantic Versioning](https://semver.org/):
-- **MAJOR** version for incompatible changes
-- **MINOR** version for new features (backwards compatible)
-- **PATCH** version for bug fixes
-
-### Unreleased Changes
-Changes in `main` branch not yet released will be listed in the `[Unreleased]` section above.
-
-### Release Process
-1. Update CHANGELOG.md with new version section (move items from [Unreleased])
-2. Commit changes: `git commit -m "chore: prepare release v1.1.0"`
-3. Create and push git tag: `git tag v1.1.0 && git push origin main --tags`
-4. GitHub Actions will automatically:
-   - Update version in solve-wordle.csproj
-   - Build and publish the application
-   - Create a GitHub release with changelog notes
-   - Deploy to GitHub Pages
-   - Attach release archive (ZIP)
-
----
-
-## Future Roadmap
-
-### Planned Features
-- [ ] IndexedDB caching for faster subsequent loads
-- [ ] Progressive Web App (PWA) support for offline use
-- [ ] Multiple language support (Spanish, French, etc.)
-- [ ] Word definition lookup integration
-- [ ] Export/import puzzle state
-- [ ] Statistics tracking (games solved, average guesses)
-- [ ] Hard mode support (must use revealed clues)
-- [ ] Guess simulator to test strategies
-- [ ] Mobile app packaging (iOS/Android)
-
-### Under Consideration
-- Unit test suite for core algorithms
-- Integration tests for data loading
-- Automated screenshot testing
-- Performance benchmarking
-- Accessibility (WCAG 2.1 AA compliance)
-- Internationalization (i18n) framework
-
----
-
-## Maintenance Notes
-
-### Breaking Changes
-This section will document breaking changes that require user action:
-
-**None yet** - Version 1.0.0 is the initial release
-
-### Deprecations
-Features or APIs that will be removed in future versions:
-
-**None yet**
-
-### Security Updates
-Security-related fixes will be called out specifically:
-
-**None yet** - No known vulnerabilities
-
----
-
-## Contributing
-
-If you'd like to contribute to this project:
-1. Check the [Unreleased] section for in-progress work
-2. Review CONVENTIONS.md for coding standards
-3. Review DECISIONS.md for architectural context
-4. Submit PRs against the `main` branch
-5. Update this CHANGELOG.md in your PR
-
----
-
-## Links
-- [GitHub Repository](https://github.com/dkopec/solve-wordle)
-- [Live Demo](https://dkopec.github.io/solve-wordle/)
-- [Report Issues](https://github.com/dkopec/solve-wordle/issues)
