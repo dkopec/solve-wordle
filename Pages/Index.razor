@@ -8,7 +8,15 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div tabindex="-1">
             <h1 class="mb-2" tabindex="-1">🟩 Wordle Solver</h1>
-            <p class="lead mb-0" tabindex="-1">Click suggested words, then click letters to set their colors!</p>
+            <p class="lead mb-0" tabindex="-1">Choose a suggested word, then click letters to set their colors!</p>
+            <p class="mb-0 mt-1" tabindex="-1">
+                <small class="text-muted">
+                    <i class="bi bi-link-45deg"></i> Play Wordle: 
+                    <a href="https://www.nytimes.com/games/wordle/index.html" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                        nytimes.com/games/wordle
+                    </a>
+                </small>
+            </p>
         </div>
         <button type="button" class="btn btn-outline-secondary" tabindex="-1" @onclick="ToggleDarkMode">
             <i class="bi @(isDarkMode ? "bi-sun-fill" : "bi-moon-stars-fill")"></i>
