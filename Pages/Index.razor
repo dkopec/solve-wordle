@@ -30,7 +30,7 @@
             {
                 int rowIndex = i;
                 <div class="wordle-row-container">
-                    <div class="wordle-row">
+                    <div class="wordle-row" data-row-index="@rowIndex">
                         @if (guesses[rowIndex].IsEditing)
                         {
                             <div class="edit-mode-container">
@@ -50,7 +50,7 @@
                                        maxlength="5"
                                        value="@guesses[rowIndex].EditingWord"
                                        @oninput="@(e => { if (e.Value != null) guesses[rowIndex].EditingWord = e.Value.ToString()!.ToUpper(); })"
-                                       @onkeydown="@(async e => { if (e.Key != null && e.Key == "Enter" && guesses[rowIndex].EditingWord.Length == 5) { await ConfirmEditAndSubmit(rowIndex); } })"
+                                       @onkeydown="@(async e => { if (e.Key != null && e.Key == "Enter" && guesses[rowIndex].EditingWord.Length == 5) await ConfirmEdit(rowIndex); })"
                                        @onkeydown:stopPropagation="true"
                                        placeholder="Type word..." />
                             </div>
@@ -686,7 +686,7 @@
         }
     }
 
-    private void ConfirmEdit(int rowIndex)
+    private async Task ConfirmEdit(int rowIndex)
     {
         if (rowIndex < guesses.Count)
         {
@@ -721,14 +721,25 @@
                         }
                     }
                 }
+                
+                // Focus the first tile of the current row after confirming edit
+                StateHasChanged();
+                await Task.Delay(100); // Increased delay for DOM to update
+                try
+                {
+                    await JS.InvokeVoidAsync("focusRowTile", rowIndex);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Focus failed: {ex.Message}");
+                }
             }
         }
     }
 
     private async Task ConfirmEditAndSubmit(int rowIndex)
     {
-        ConfirmEdit(rowIndex);
-        await Task.CompletedTask;
+        await ConfirmEdit(rowIndex);
     }
 
     private void CancelEdit(int rowIndex)

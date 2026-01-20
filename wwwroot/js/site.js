@@ -665,3 +665,21 @@ function focusFirstTile() {
         return false;
     }
 }
+
+function focusRowTile(rowIndex) {
+    // Find the row by data attribute
+    const row = document.querySelector(`.wordle-row[data-row-index="${rowIndex}"]`);
+    if (row) {
+        const firstTile = row.querySelector('button.wordle-tile:not([disabled])');
+        if (firstTile) {
+            console.log('Focusing tile in row', rowIndex);
+            firstTile.focus();
+            return true;
+        } else {
+            console.warn('No enabled tiles found in row', rowIndex);
+        }
+    } else {
+        console.warn('Could not find row with index', rowIndex);
+    }
+    return false;
+}
