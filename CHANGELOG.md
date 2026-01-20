@@ -1,3 +1,10 @@
+## [1.3.0](https://github.com/dkopec/solve-wordle/compare/v1.2.0...v1.3.0) (2026-01-20)
+
+
+### Features
+
+* add loading state and spinner for word filtering process ([b861a98](https://github.com/dkopec/solve-wordle/commit/b861a985deeaee994695e6461c48c5a23aeb9a16))
+
 ## [1.2.0](https://github.com/dkopec/solve-wordle/compare/v1.1.2...v1.2.0) (2026-01-20)
 
 
