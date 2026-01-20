@@ -683,3 +683,68 @@ function focusRowTile(rowIndex) {
     }
     return false;
 }
+
+// Get browser information
+window.getBrowserInfo = function() {
+    const ua = navigator.userAgent;
+    let browserName = "Unknown";
+    let browserVersion = "Unknown";
+    
+    // Detect browser
+    if (ua.indexOf("Firefox") > -1) {
+        browserName = "Firefox";
+        browserVersion = ua.match(/Firefox\/(\d+\.\d+)/)?.[1] || "Unknown";
+    } else if (ua.indexOf("Edg") > -1) {
+        browserName = "Edge";
+        browserVersion = ua.match(/Edg\/(\d+\.\d+)/)?.[1] || "Unknown";
+    } else if (ua.indexOf("Chrome") > -1) {
+        browserName = "Chrome";
+        browserVersion = ua.match(/Chrome\/(\d+\.\d+)/)?.[1] || "Unknown";
+    } else if (ua.indexOf("Safari") > -1) {
+        browserName = "Safari";
+        browserVersion = ua.match(/Version\/(\d+\.\d+)/)?.[1] || "Unknown";
+    }
+    
+    return `${browserName} ${browserVersion}`;
+};
+
+// Get OS information
+window.getOSInfo = function() {
+    const ua = navigator.userAgent;
+    let os = "Unknown";
+    
+    if (ua.indexOf("Win") > -1) {
+        os = "Windows";
+        if (ua.indexOf("Windows NT 10.0") > -1) os = "Windows 10/11";
+        else if (ua.indexOf("Windows NT 6.3") > -1) os = "Windows 8.1";
+        else if (ua.indexOf("Windows NT 6.2") > -1) os = "Windows 8";
+    } else if (ua.indexOf("Mac") > -1) {
+        os = "macOS";
+        const match = ua.match(/Mac OS X (\d+[._]\d+)/);
+        if (match) os = `macOS ${match[1].replace(/_/g, '.')}`;
+    } else if (ua.indexOf("Linux") > -1) {
+        os = "Linux";
+    } else if (ua.indexOf("Android") > -1) {
+        os = "Android";
+        const match = ua.match(/Android (\d+\.\d+)/);
+        if (match) os = `Android ${match[1]}`;
+    } else if (ua.indexOf("iOS") > -1 || ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) {
+        os = "iOS";
+        const match = ua.match(/OS (\d+_\d+)/);
+        if (match) os = `iOS ${match[1].replace(/_/g, '.')}`;
+    }
+    
+    return os;
+};
+
+// Get console errors (capture from this point forward)
+window.consoleErrors = [];
+(function() {
+    const originalError = console.error;
+    console.error = function(...args) {
+        window.consoleErrors.push(args.map(arg => 
+            typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+        ).join(' '));
+        originalError.apply(console, args);
+    };
+})();

@@ -342,9 +342,9 @@
                 <i class="bi bi-github"></i> View on GitHub
             </a>
             <span>•</span>
-            <a href="@GetBugReportUrl()" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-bug"></i> Submit a Bug
-            </a>
+            <button @onclick="OpenBugReport" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-bug"></i> Report a Bug
+            </button>
         </div>
     </footer>
 </div>
@@ -967,6 +967,12 @@
         }
     }
 
+    private async Task OpenBugReport()
+    {
+        var url = await GetBugReportUrl();
+        await JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         // Find the current active guess (unlocked with a word)
@@ -990,25 +996,79 @@
         }
     }
 
-    private string GetBugReportUrl()
+    private async Task<string> GetBugReportUrl()
     {
-        // Build game state summary
-        var lockedGuesses = guesses.Where(g => g.IsLocked).ToList();
-        var gameState = lockedGuesses.Any() 
-            ? $"\n\n**Game State:**\n```\nLocked guesses: {lockedGuesses.Count}\n" +
-              $"Current word: {guesses.FirstOrDefault(g => !g.IsLocked && !string.IsNullOrEmpty(g.Word))?.Word ?? "None"}\n" +
-              $"Possible words remaining: {possibleWords?.Count ?? 0}\n" +
-              $"Solved: {isSolved}\n```"
-            : "";
-
-        var additionalContext = $"**App Version:** {appVersion}\n" +
-                               $"**Theme:** {(isDarkMode ? "Dark" : "Light")} mode\n" +
-                               $"**URL:** {githubUrl}\n" +
-                               gameState;
-
-        // URL encode the additional context
-        var encodedContext = Uri.EscapeDataString(additionalContext);
-        
-        return $"{githubUrl}/issues/new?template=bug_report.yml&labels=bug&additional={encodedContext}";
+        try
+        {
+            // Get browser and OS info via JavaScript
+            var browserInfo = await JS.InvokeAsync<string>("getBrowserInfo");
+            var osInfo = await JS.InvokeAsync<string>("getOSInfo");
+            var consoleErrors = await JS.InvokeAsync<string[]>("eval", "window.consoleErrors || []");
+            
+            // Build game state summary for additional context
+            var lockedGuesses = guesses.Where(g => g.IsLocked).ToList();
+            var additionalContext = new System.Text.StringBuilder();
+            
+            additionalContext.AppendLine($"**Theme:** {(isDarkMode ? "Dark" : "Light")} mode");
+            additionalContext.AppendLine();
+            
+            if (lockedGuesses.Any())
+            {
+                additionalContext.AppendLine("**Game State:**");
+                foreach (var guess in lockedGuesses)
+                {
+                    var stateStr = string.Join("", guess.States.Select(s => s switch {
+                        LetterState.Green => "🟩",
+                        LetterState.Yellow => "🟨",
+                        _ => "⬜"
+                    }));
+                    additionalContext.AppendLine($"- {guess.Word} {stateStr}");
+                }
+                
+                var currentWord = guesses.FirstOrDefault(g => !g.IsLocked && !string.IsNullOrEmpty(g.Word))?.Word;
+                if (!string.IsNullOrEmpty(currentWord))
+                {
+                    additionalContext.AppendLine($"- Current word: {currentWord}");
+                }
+                
+                additionalContext.AppendLine($"- Possible words remaining: {possibleWords?.Count ?? 0}");
+                additionalContext.AppendLine($"- Solved: {isSolved}");
+            }
+            
+            // Build console errors string
+            var consoleErrorsStr = "";
+            if (consoleErrors?.Length > 0)
+            {
+                consoleErrorsStr = string.Join("\n", consoleErrors.Take(10).Select(e => $"- {e}"));
+            }
+            
+            // Build GitHub issue URL with pre-filled fields
+            var title = $"[Bug] Issue with Wordle Solver (v{appVersion})";
+            var urlBuilder = new System.Text.StringBuilder();
+            urlBuilder.Append($"{githubUrl}/issues/new");
+            urlBuilder.Append("?template=bug_report.yml");
+            urlBuilder.Append($"&title={Uri.EscapeDataString(title)}");
+            urlBuilder.Append("&labels=bug");
+            urlBuilder.Append($"&version={Uri.EscapeDataString(appVersion)}");
+            urlBuilder.Append($"&browser={Uri.EscapeDataString(browserInfo)}");
+            urlBuilder.Append($"&os={Uri.EscapeDataString(osInfo)}");
+            
+            if (!string.IsNullOrEmpty(consoleErrorsStr))
+            {
+                urlBuilder.Append($"&console={Uri.EscapeDataString(consoleErrorsStr)}");
+            }
+            
+            if (additionalContext.Length > 0)
+            {
+                urlBuilder.Append($"&additional={Uri.EscapeDataString(additionalContext.ToString())}");
+            }
+            
+            return urlBuilder.ToString();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error building bug report URL: {ex.Message}");
+            return $"{githubUrl}/issues/new?template=bug_report.yml&labels=bug";
+        }
     }
 }
