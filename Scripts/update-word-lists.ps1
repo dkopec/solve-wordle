@@ -33,8 +33,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$DataDir = Join-Path $PSScriptRoot "..\Data"
-$WwwrootDataDir = Join-Path $PSScriptRoot "..\wwwroot\data"
+$DataDir = Join-Path $PSScriptRoot "..\wwwroot\data"
 $BackupDir = Join-Path $DataDir "backups"
 
 # Data sources
@@ -250,27 +249,6 @@ function Write-WordFile {
     }
 }
 
-function Sync-ToWwwroot {
-    if ($DryRun) {
-        Write-Log "DRY RUN: Would sync to wwwroot/data/"
-        return
-    }
-    
-    if (-not (Test-Path $WwwrootDataDir)) {
-        New-Item -Path $WwwrootDataDir -ItemType Directory -Force | Out-Null
-    }
-    
-    foreach ($filename in @("words.txt", "common-words.txt", "past-answers.txt")) {
-        $source = Join-Path $DataDir $filename
-        $dest = Join-Path $WwwrootDataDir $filename
-        
-        if (Test-Path $source) {
-            Copy-Item $source $dest -Force
-            Write-Log "Synced $filename to wwwroot/data/" -Level DEBUG
-        }
-    }
-}
-
 # Main execution
 try {
     Write-Log "=== Starting Word List Update ==="
@@ -305,9 +283,6 @@ try {
         -FilePath (Join-Path $DataDir "words.txt") `
         -Words $allWords `
         -Description "total words"
-    
-    # Sync to wwwroot
-    Sync-ToWwwroot
     
     $stopwatch.Stop()
     Write-Log "=== Update Complete ($($stopwatch.Elapsed.TotalSeconds.ToString('F1'))s) ==="

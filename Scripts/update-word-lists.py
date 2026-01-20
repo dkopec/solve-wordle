@@ -21,9 +21,8 @@ from typing import Set, List, Tuple
 import time
 
 # Configuration
-DATA_DIR = Path("Data")
-WWWROOT_DATA_DIR = Path("wwwroot/data")
-BACKUP_DIR = Path("Data/backups")
+DATA_DIR = Path("wwwroot/data")
+BACKUP_DIR = Path("wwwroot/data/backups")
 
 # Data sources
 WORDLE_ANSWERS_URL = "https://www.nytimes.com/games-assets/v2/wordle.json"
@@ -208,21 +207,7 @@ class WordListUpdater:
         else:
             self.log(f"✓ No changes for {filepath.name}")
     
-    def sync_to_wwwroot(self):
-        """Sync Data/ files to wwwroot/data/"""
-        if self.dry_run:
-            self.log("DRY RUN: Would sync to wwwroot/data/")
-            return
-        
-        WWWROOT_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        
-        for filename in ["words.txt", "common-words.txt", "past-answers.txt"]:
-            source = DATA_DIR / filename
-            dest = WWWROOT_DATA_DIR / filename
-            
-            if source.exists():
-                dest.write_text(source.read_text(encoding='utf-8'), encoding='utf-8')
-                self.verbose_log(f"Synced {filename} to wwwroot/data/")
+
     
     def run(self):
         """Main update process"""
@@ -259,9 +244,6 @@ class WordListUpdater:
                 all_words,
                 "total words"
             )
-            
-            # Sync to wwwroot
-            self.sync_to_wwwroot()
             
             elapsed = time.time() - start_time
             self.log(f"=== Update Complete ({elapsed:.1f}s) ===")

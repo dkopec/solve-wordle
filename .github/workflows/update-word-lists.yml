@@ -43,7 +43,7 @@ jobs:
           python Scripts/update-word-lists.py
           
           # Check if files were modified
-          if git diff --quiet Data/ wwwroot/data/; then
+          if git diff --quiet wwwroot/data/; then
             echo "changes_detected=false" >> $GITHUB_OUTPUT
             echo "No changes detected in word lists"
           else
@@ -57,11 +57,11 @@ jobs:
           echo "=== Git Status ==="
           git status
           echo ""
-          echo "=== Changes to Data files ==="
-          git diff --stat Data/ wwwroot/data/
+          echo "=== Changes to word lists ==="
+          git diff --stat wwwroot/data/
           echo ""
           echo "=== Detailed diff ==="
-          git diff Data/ wwwroot/data/
+          git diff wwwroot/data/
       
       - name: Commit and push changes
         if: steps.update.outputs.changes_detected == 'true' || github.event.inputs.force_update == 'true'
@@ -72,9 +72,9 @@ jobs:
           # Get current date for commit message
           TODAY=$(date +%Y-%m-%d)
           
-          git add Data/past-answers.txt wwwroot/data/past-answers.txt
-          git add Data/common-words.txt wwwroot/data/common-words.txt
-          git add Data/words.txt wwwroot/data/words.txt
+          git add wwwroot/data/past-answers.txt
+          git add wwwroot/data/common-words.txt
+          git add wwwroot/data/words.txt
           
           git commit -m "chore(data): auto-update word lists - $TODAY" \
                      -m "Updated by GitHub Actions workflow" \
@@ -94,7 +94,7 @@ jobs:
             echo "✅ **Changes detected and committed**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Modified Files:" >> $GITHUB_STEP_SUMMARY
-            git diff --name-only HEAD~1 HEAD | grep -E "(Data/|wwwroot/data/)" >> $GITHUB_STEP_SUMMARY || echo "No files modified" >> $GITHUB_STEP_SUMMARY
+            git diff --name-only HEAD~1 HEAD | grep "wwwroot/data/" >> $GITHUB_STEP_SUMMARY || echo "No files modified" >> $GITHUB_STEP_SUMMARY
           else
             echo "ℹ️ **No changes detected**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -106,6 +106,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| File | Line Count |" >> $GITHUB_STEP_SUMMARY
           echo "|------|------------|" >> $GITHUB_STEP_SUMMARY
-          echo "| words.txt | $(wc -l < Data/words.txt) |" >> $GITHUB_STEP_SUMMARY
-          echo "| common-words.txt | $(wc -l < Data/common-words.txt) |" >> $GITHUB_STEP_SUMMARY
-          echo "| past-answers.txt | $(wc -l < Data/past-answers.txt) |" >> $GITHUB_STEP_SUMMARY
+          echo "| words.txt | $(wc -l < wwwroot/data/words.txt) |" >> $GITHUB_STEP_SUMMARY
+          echo "| common-words.txt | $(wc -l < wwwroot/data/common-words.txt) |" >> $GITHUB_STEP_SUMMARY
+          echo "| past-answers.txt | $(wc -l < wwwroot/data/past-answers.txt) |" >> $GITHUB_STEP_SUMMARY
