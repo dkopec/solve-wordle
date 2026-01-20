@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/dkopec/solve-wordle/compare/v1.3.0...v1.3.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* **ci:** update workflow trigger to use workflow_run for deployment ([2786c0a](https://github.com/dkopec/solve-wordle/commit/2786c0aaa560042d37776bce74d3473736b53511))
+
 ## [1.3.0](https://github.com/dkopec/solve-wordle/compare/v1.2.0...v1.3.0) (2026-01-20)
 
 
