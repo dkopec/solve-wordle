@@ -1,3 +1,14 @@
+## [2.0.0](https://github.com/dkopec/solve-wordle/compare/v1.3.1...v2.0.0) (2026-01-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ui:** Enhance Wordle Solver with Interactive Features and Improved UI
+
+### Code Refactoring
+
+* **ui:** Enhance Wordle Solver with Interactive Features and Improved UI ([bececd9](https://github.com/dkopec/solve-wordle/commit/bececd9db7f953b381f35928c022e204834b479e))
+
 ## [1.3.1](https://github.com/dkopec/solve-wordle/compare/v1.3.0...v1.3.1) (2026-01-20)
 
 
