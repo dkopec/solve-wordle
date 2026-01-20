@@ -651,3 +651,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Focus management for Blazor WASM keyboard navigation
+function focusFirstTile() {
+    // Find the first wordle tile button in the first row
+    const firstTile = document.querySelector('.wordle-row button.wordle-tile:not([disabled])');
+    if (firstTile) {
+        console.log('Focusing first tile:', firstTile);
+        firstTile.focus();
+        return true;
+    } else {
+        console.warn('Could not find first tile');
+        return false;
+    }
+}

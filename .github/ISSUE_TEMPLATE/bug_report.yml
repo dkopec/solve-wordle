@@ -1,0 +1,95 @@
+name: Bug Report
+description: Report a bug or issue with the Wordle Solver
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below.
+        
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Tell us what happened
+    validations:
+      required: true
+      
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Enter '...'
+        4. See error
+    validations:
+      required: true
+      
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Tell us what you expected
+    validations:
+      required: true
+      
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Tell us what actually happened
+    validations:
+      required: true
+      
+  - type: input
+    id: version
+    attributes:
+      label: App Version
+      description: What version of the app are you using?
+      placeholder: e.g., 1.0.0
+    validations:
+      required: false
+      
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: What browser are you using?
+      placeholder: e.g., Chrome 120, Firefox 121, Safari 17
+    validations:
+      required: false
+      
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you using?
+      placeholder: e.g., Windows 11, macOS 14, iOS 17
+    validations:
+      required: false
+      
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser Console Errors
+      description: Any errors in the browser console? (Press F12 → Console tab)
+      placeholder: Paste any error messages here
+      render: shell
+    validations:
+      required: false
+      
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem
+      placeholder: Add screenshots, game state, or other relevant information
+    validations:
+      required: false

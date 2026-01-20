@@ -131,12 +131,17 @@ Calculate suggestions with scoring algorithm
 ### JavaScript Interop
 
 #### site.js
-- **Purpose**: Auto-advance focus between inputs
+- **Purpose**: Keyboard navigation and focus management
 - **Why JS?**: DOM focus manipulation is more reliable with native JS
 - **Functions**:
-  - `focusNextInput(currentId)`: Advances to next input in sequence
-  - `focusPreviousInput(currentId)`: Backspace navigation
+  - `focusFirstTile()`: Auto-focuses first game tile on page load
+  - Legacy input navigation functions for old MVC form
 - **Error Handling**: Silent fallback if elements not found
+- **Keyboard Support**:
+  - Arrow keys (←/→) cycle word suggestions
+  - Enter key locks current guess
+  - Tab key navigates through letter tiles
+  - Auto-focus first tile on page load for keyboard-first workflow
 
 ## Data Storage
 

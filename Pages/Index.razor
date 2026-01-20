@@ -2,16 +2,15 @@
 @inject WordListService WordListService
 @inject IJSRuntime JS
 @using System.Reflection
+@using Microsoft.AspNetCore.Components
 
-<PageTitle>Wordle Solver</PageTitle>
-
-<div class="container-fluid mt-4">
+<div class="container mt-4" @onkeydown="HandleKeyDown">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="mb-2">Wordle Solver</h1>
-            <p class="lead mb-0">Enter your Wordle clues to find possible words!</p>
+        <div tabindex="-1">
+            <h1 class="mb-2" tabindex="-1">🟩 Wordle Solver</h1>
+            <p class="lead mb-0" tabindex="-1">Click suggested words, then click letters to set their colors!</p>
         </div>
-        <button type="button" class="btn btn-outline-secondary" @onclick="ToggleDarkMode" id="darkModeToggle">
+        <button type="button" class="btn btn-outline-secondary" tabindex="-1" @onclick="ToggleDarkMode">
             <i class="bi @(isDarkMode ? "bi-sun-fill" : "bi-moon-stars-fill")"></i>
         </button>
     </div>
@@ -23,335 +22,312 @@
             Loading word lists...
         </div>
     }
-
-    <div class="row">
-        <div class="col-lg-5 col-xl-4 mb-4">
-            <div class="sticky-top" style="top: 20px;">
-            <div class="mb-4" id="wordleForm">
-                <div class="mb-3">
-                    <label class="form-label">Correct Letters (Green)</label>
-                    <div class="d-flex gap-2 mb-2" id="letterBoxes">
-                        @for (int i = 0; i < 5; i++)
+    else
+    {
+        <!-- Main game board -->
+        <div class="wordle-board mb-4">
+            @for (int i = 0; i < guesses.Count; i++)
+            {
+                int rowIndex = i;
+                <div class="wordle-row-container">
+                    <div class="wordle-row">
+                        @if (guesses[rowIndex].IsEditing)
                         {
-                            int index = i;
-                            <input type="text" 
-                                   class="form-control text-center letter-box" 
-                                   maxlength="1" 
-                                   id="@($"correct-{index}")"
-                                   value="@(correctLetters[index])"
-                                   @oninput="@((e) => OnCorrectLetterInput(index, e))"
-                                   @onkeydown="@((e) => OnCorrectLetterKeyDown(index, e))"
-                                   @onfocus="@((e) => OnInputFocus(e))"
-                                   style="width: 60px; height: 60px; font-size: 24px; font-weight: bold; text-transform: uppercase;" />
-                        }
-                    </div>
-                    <small class="form-text text-muted">Enter known letters in their correct positions. Leave blank for unknown positions.</small>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Wrong Position Letters (Yellow)</label>
-                    <div id="wrongPositionRows">
-                        @for (int rowIdx = 0; rowIdx < wrongPositionRows.Count; rowIdx++)
-                        {
-                            int currentRow = rowIdx;
-                            <div class="d-flex gap-2 mb-2 align-items-center wrong-pos-row">
-                                <div class="d-flex gap-2">
-                                    @for (int i = 0; i < 5; i++)
-                                    {
-                                        int pos = i;
-                                        <input type="text" 
-                                               class="form-control text-center wrong-pos-box" 
-                                               maxlength="1"
-                                               id="@($"wrong-{currentRow}-{pos}")"
-                                               value="@wrongPositionRows[currentRow][pos]"
-                                               @oninput="@((e) => OnWrongPosInput(currentRow, pos, e))"
-                                               @onkeydown="@((e) => OnWrongPosKeyDown(currentRow, pos, e))"
-                                               @onfocus="@((e) => OnInputFocus(e))"
-                                               style="width: 50px; height: 50px; font-size: 20px; font-weight: bold; text-transform: uppercase;" />
-                                    }
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveWrongPosRow(currentRow)">
-                                    ×
-                                </button>
+                            <div class="edit-mode-container">
+                                @for (int j = 0; j < 5; j++)
+                                {
+                                    int letterIndex = j;
+                                    var currentLetter = guesses[rowIndex].EditingWord.Length > letterIndex 
+                                        ? guesses[rowIndex].EditingWord[letterIndex].ToString() 
+                                        : "";
+                                    <div class="wordle-tile letter-gray edit-tile">
+                                        @currentLetter
+                                    </div>
+                                }
+                                <input @ref="editInputRef"
+                                       type="text" 
+                                       class="edit-overlay-input"
+                                       maxlength="5"
+                                       value="@guesses[rowIndex].EditingWord"
+                                       @oninput="@(e => { if (e.Value != null) guesses[rowIndex].EditingWord = e.Value.ToString()!.ToUpper(); })"
+                                       @onkeydown="@(async e => { if (e.Key != null && e.Key == "Enter" && guesses[rowIndex].EditingWord.Length == 5) await ConfirmEditAndSubmit(rowIndex); })"
+                                       placeholder="Type word..." />
                             </div>
-                        }
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" @onclick="AddWrongPosRow">
-                        + Add Row
-                    </button>
-                    <small class="form-text text-muted d-block mt-2">For each yellow letter, enter it in the position(s) where it appeared but was wrong. Multiple rows let you track different guesses.</small>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Excluded Letters (Gray)</label>
-                    <div id="excludedLetterBoxes">
-                        @for (int rowIdx = 0; rowIdx < excludedLetterRows.Count; rowIdx++)
-                        {
-                            int currentRow = rowIdx;
-                            <div class="d-flex gap-2 mb-2 align-items-center excluded-letter-row">
-                                <div class="d-flex gap-2">
-                                    @for (int i = 0; i < 5; i++)
-                                    {
-                                        int pos = i;
-                                        <input type="text" 
-                                               class="form-control text-center excluded-letter-box" 
-                                               maxlength="1"
-                                               id="@($"excluded-{currentRow}-{pos}")"
-                                               value="@excludedLetterRows[currentRow][pos]"
-                                               @oninput="@((e) => OnExcludedLetterInput(currentRow, pos, e))"
-                                               @onkeydown="@((e) => OnExcludedLetterKeyDown(currentRow, pos, e))"
-                                               @onfocus="@((e) => OnInputFocus(e))"
-                                               style="width: 50px; height: 50px; font-size: 20px; font-weight: bold; text-transform: uppercase;" />
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
-                    <small class="form-text text-muted d-block mt-2">Enter letters that are not in the word at all. New rows will appear automatically as you type.</small>
-                </div>
-
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="excludePastAnswers" @bind="excludePastAnswers" />
-                    <label class="form-check-label" for="excludePastAnswers">
-                        Exclude previous Wordle answers
-                    </label>
-                    <small class="form-text text-muted d-block">
-                        Note: While Wordle rarely reuses past answers, it can happen. Uncheck this if you're not finding expected words.
-                    </small>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" @onclick="FindWords" disabled="@isFiltering">
-                        @if (isFiltering)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            <span>Filtering...</span>
                         }
                         else
                         {
-                            <i class="bi bi-search"></i>
-                            <span>Find Words</span>
+                            @for (int j = 0; j < 5; j++)
+                            {
+                                int letterIndex = j;
+                                var letter = guesses[rowIndex].Word.Length > letterIndex 
+                                    ? guesses[rowIndex].Word[letterIndex].ToString().ToUpper() 
+                                    : "";
+                                var state = guesses[rowIndex].States[letterIndex];
+                                var stateClass = state == LetterState.Green ? "letter-green" :
+                                               state == LetterState.Yellow ? "letter-yellow" : "letter-gray";
+                                
+                                <button class="wordle-tile @stateClass" 
+                                        @onclick="() => CycleTileState(rowIndex, letterIndex)"
+                                        disabled="@guesses[rowIndex].IsLocked">
+                                    @letter
+                                </button>
+                            }
                         }
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" @onclick="Reset" disabled="@isFiltering">
-                        <i class="bi bi-arrow-counterclockwise"></i> Reset
-                    </button>
+                    </div>
+                    @if (guesses[rowIndex].IsEditing)
+                    {
+                        <div class="row-controls">
+                            <button class="btn btn-sm btn-success" 
+                                    @onclick="() => ConfirmEdit(rowIndex)"
+                                    disabled="@(guesses[rowIndex].EditingWord.Length != 5)"
+                                    title="Confirm word (must be 5 letters)">
+                                <i class="bi bi-check-lg"></i> Confirm
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" 
+                                    @onclick="() => CancelEdit(rowIndex)"
+                                    title="Cancel editing">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </button>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(guesses[rowIndex].Word) && !guesses[rowIndex].IsLocked)
+                    {
+                        <div class="row-controls">
+                            @if (guesses[rowIndex].AvailableSuggestions.Count > 1)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        @onclick="() => CycleSuggestion(rowIndex, -1)"
+                                        title="Previous suggestion">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                            }
+                            <button class="btn btn-sm btn-success" 
+                                    @onclick="() => LockGuess(rowIndex)"
+                                    title="Lock guess and get next suggestion">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            @if (guesses[rowIndex].AvailableSuggestions.Count > 1)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        @onclick="() => CycleSuggestion(rowIndex, 1)"
+                                        title="Next suggestion">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            }
+                            <button class="btn btn-sm btn-outline-primary ms-2" 
+                                    @onclick="() => ShuffleGuess(rowIndex)"
+                                    title="Get a random word suggestion">
+                                <i class="bi bi-shuffle"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info ms-2" 
+                                    @onclick="() => EditGuess(rowIndex)"
+                                    title="Manually enter a word">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    }
+                    else if (guesses[rowIndex].IsLocked)
+                    {
+                        <div class="row-controls">
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    @onclick="() => RemoveGuess(rowIndex)"
+                                    title="Remove this guess">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success" 
+                                    @onclick="() => UnlockGuess(rowIndex)"
+                                    title="Click to unlock">
+                                <i class="bi bi-lock-fill"></i> Locked
+                            </button>
+                        </div>
+                    }
                 </div>
-            </div>
-            </div>
+            }
         </div>
 
-        <div class="col-lg-7 col-xl-8">
-            @if (isFiltering)
-            {
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-3 text-muted">Analyzing possible words...</p>
-                </div>
-            }
-            else if (solver != null && bestStartingWords.Any() && possibleWords == null)
-            {
-                <div class="alert alert-info mb-4">
-                    <h6 class="alert-heading mb-2"><i class="bi bi-lightbulb"></i> Best Starting Words:</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach (var word in bestStartingWords)
-                        {
-                            <span class="badge bg-primary fs-6 cursor-pointer starting-word" 
-                                  style="cursor: pointer;" 
-                                  title="Click to use this word"
-                                  @onclick="() => UseStartingWord(word)">
-                                @word.ToUpper()
-                            </span>
-                        }
-                    </div>
-                    <small class="text-muted d-block mt-2">These words are statistically most likely to help you solve the puzzle based on past Wordle answers.</small>
-                </div>
+        @if (isSolved)
+        {
+            <div class="alert alert-success text-center mt-4 solved-animation">
+                <h2 class="mb-3">🎉 Congratulations! 🎉</h2>
+                <p class="lead">You solved the Wordle!</p>
+                <p class="text-muted">Click "Reset All" to try another puzzle</p>
+            </div>
+        }
 
-                @if (!string.IsNullOrEmpty(guessInOne))
+        <!-- Add more rows button -->
+        @if (guesses.Count < 12)
+        {
+            <div class="text-center mb-4">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="AddGuessRow">
+                    <i class="bi bi-plus-circle"></i> Add More Rows
+                </button>
+            </div>
+        }
+
+        <!-- Reset button -->
+        <div class="text-center mb-4">
+            <button class="btn btn-outline-danger btn-sm" @onclick="Reset">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset All
+            </button>
+        </div>
+
+        <!-- Results section -->
+        @if (isFiltering)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-muted">Finding matches...</p>
+            </div>
+        }
+        else if (possibleWords != null && possibleWords.Any())
+        {
+            <div class="alert alert-success">
+                <h4 class="mb-1">
+                    <i class="bi bi-check-circle-fill"></i> 
+                    Found @possibleWords.Count possible word@(possibleWords.Count != 1 ? "s" : "")
+                </h4>
+                <small class="text-muted">Click a word to add it to your board</small>
+            </div>
+
+            <!-- Word suggestions grid -->
+            <div class="suggestions-grid mb-4">
+                @foreach (var suggestion in possibleWords.Take(50))
                 {
-                    <div class="alert alert-success mb-4 border-3 border-success">
-                        <h5 class="alert-heading mb-3">
-                            <i class="bi bi-trophy-fill text-warning"></i> <strong>Feeling Lucky? Guess in One!</strong>
-                        </h5>
-                        <div class="text-center py-3">
-                            <div class="mb-3">
-                                <span class="badge bg-success text-white fs-1 px-5 py-3 shadow-lg" 
-                                      id="guessInOneWord" 
-                                      style="font-family: monospace; letter-spacing: 8px; cursor: pointer;" 
-                                      title="Click to copy"
-                                      @onclick="() => CopyToClipboard(guessInOne.ToUpper())">
-                                    @guessInOne.ToUpper()
-                                </span>
-                            </div>
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-outline-success" @onclick="RefreshGuessInOne">
-                                    <i class="bi bi-arrow-clockwise"></i> Try Another Word
-                                </button>
-                            </div>
-                            <small class="text-muted">
-                                <i class="bi bi-info-circle"></i> This is today's top statistical pick from past Wordle answers. 
-                                Click the word to copy, or try another suggestion!
-                            </small>
-                        </div>
-                    </div>
-                }
-            }
-            
-            @if (possibleWords != null && possibleWords.Any())
-            {
-                <div class="alert alert-success d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="mb-1">
-                            <i class="bi bi-check-circle-fill"></i> 
-                            Found @possibleWords.Count possible word@(possibleWords.Count != 1 ? "s" : "")
-                        </h4>
-                        <small class="text-muted">Ranked by statistical likelihood - Top suggestion is most probable</small>
-                    </div>
-                    @if (possibleWords.Count == 1)
-                    {
-                        <span class="badge bg-success fs-5 px-4 py-2">
-                            <i class="bi bi-trophy-fill"></i> SOLVED!
-                        </span>
-                    }
-                    else if (possibleWords.Count <= 5)
-                    {
-                        <span class="badge bg-success fs-5 px-4 py-2">
-                            <i class="bi bi-bullseye"></i> CLOSE!
-                        </span>
-                    }
-                    else if (possibleWords.Count <= 20)
-                    {
-                        <span class="badge bg-warning fs-5 px-4 py-2">
-                            <i class="bi bi-funnel"></i> NARROWING
-                        </span>
-                    }
-                </div>
-                
-                @if (strategicWords != null && strategicWords.Any() && possibleWords.Count > 1)
-                {
-                    <div class="alert alert-warning mb-3">
-                        <h5 class="alert-heading mb-3">
-                            <i class="bi bi-lightbulb-fill"></i> Strategic Play Option
-                        </h5>
-                        @if (possibleWords.Count > 10)
-                        {
-                            <p class="mb-2">
-                                <strong>With @possibleWords.Count possibilities remaining, a "throwaway word" is recommended</strong> to eliminate more options faster.
-                                These words won't be the answer, but they'll give you maximum information:
-                            </p>
-                        }
-                        else if (possibleWords.Count > 3)
-                        {
-                            <p class="mb-2">
-                                <strong>@possibleWords.Count possibilities remain.</strong> You can try the top-ranked word, or use a strategic word to narrow further:
-                            </p>
-                        }
-                        else
-                        {
-                            <p class="mb-2">
-                                <strong>Only @possibleWords.Count option@(possibleWords.Count != 1 ? "s" : "") left!</strong> Try the top word, or use strategic play to confirm:
-                            </p>
-                        }
-                        <div class="d-flex flex-wrap gap-2 mt-3">
-                            @foreach (var strategic in strategicWords)
+                    var confidenceClass = suggestion.ConfidencePercentage >= 70 ? "badge-success" : 
+                                         suggestion.ConfidencePercentage >= 50 ? "badge-info" :
+                                         suggestion.ConfidencePercentage >= 30 ? "badge-warning" : "badge-secondary";
+                    
+                    // Calculate estimated remaining words after this guess
+                    var currentCount = possibleWords.Count;
+                    var estimatedRemaining = suggestion.Rank == 1 ? Math.Max(1, currentCount / 10) :
+                                           suggestion.Rank <= 5 ? Math.Max(1, currentCount / 8) :
+                                           suggestion.Rank <= 10 ? Math.Max(1, currentCount / 6) :
+                                           suggestion.Rank <= 20 ? Math.Max(1, currentCount / 4) :
+                                           Math.Max(1, currentCount / 3);
+                    var wordsEliminated = currentCount - estimatedRemaining;
+                    
+                    <button class="suggestion-card @(suggestion.Rank == 1 ? "top-pick" : "")"
+                            @onclick="() => SelectWord(suggestion.Word)">
+                        <div class="suggestion-word">@suggestion.Word.ToUpper()</div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="badge @confidenceClass" title="Estimated words eliminated if this guess is used">
+                                @if (currentCount <= 10)
+                                {
+                                    <text>@suggestion.ConfidencePercentage.ToString("F0")% likely</text>
+                                }
+                                else
+                                {
+                                    <text>~@wordsEliminated eliminated</text>
+                                }
+                            </span>
+                            @if (suggestion.Rank == 1)
                             {
-                                <span class="badge bg-warning text-dark fs-6 px-3 py-2" style="cursor: pointer;" 
-                                      title="Try this word to eliminate the most possibilities">
-                                    <i class="bi bi-gear-fill"></i> @strategic.Word.ToUpper()
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-star-fill"></i> BEST
                                 </span>
-                            }
-                        </div>
-                        <small class="text-muted d-block mt-2">
-                            <i class="bi bi-info-circle"></i> <strong>Smart strategy:</strong> These words avoid your green letters and test the most uncertain variables.
-                            @if (possibleWords.Count > 5)
-                            {
-                                <text>After trying one, you'll dramatically narrow down the possibilities!</text>
                             }
                             else
                             {
-                                <text>Use these to confidently confirm the answer or eliminate remaining options.</text>
+                                <small class="text-muted">#@suggestion.Rank</small>
                             }
-                        </small>
-                    </div>
-                }
-                
-                @if (possibleWords.Count > 1 && possibleWords.Count <= 3 && possibleWords.First().ConfidencePercentage >= 75)
-                {
-                    <div class="alert alert-info mb-3">
-                        <strong><i class="bi bi-stars"></i> Strong recommendation:</strong> 
-                        Try "<strong class="text-uppercase fs-5">@possibleWords.First().Word</strong>" 
-                        (@possibleWords.First().ConfidencePercentage.ToString("F1")% confidence)
-                    </div>
-                }
-                else if (possibleWords.Count > 3 && possibleWords.Count <= 5)
-                {
-                    <div class="alert alert-success mb-3">
-                        <i class="bi bi-target"></i> <strong>You're close!</strong> Try the top-ranked word below, or if unsure, use a strategic word above to narrow further.
-                    </div>
-                }
-                
-                <div class="list-group mb-3">
-                    @foreach (var suggestion in possibleWords.Take(50))
-                    {
-                        var confidenceClass = suggestion.ConfidencePercentage >= 70 ? "success" : 
-                                             suggestion.ConfidencePercentage >= 50 ? "info" :
-                                             suggestion.ConfidencePercentage >= 30 ? "warning" : "secondary";
-                        var progressWidth = Math.Round(suggestion.ConfidencePercentage, 0);
-                        var isTopPick = suggestion.Rank == 1;
-                        var borderClass = isTopPick && suggestion.ConfidencePercentage >= 70 ? "border-success border-3" : "";
-                        var bgClass = isTopPick && suggestion.ConfidencePercentage >= 70 ? "top-pick-highlight" : "";
-                        
-                        <div class="list-group-item d-flex justify-content-between align-items-center mb-2 @borderClass @bgClass">
-                            <div class="d-flex align-items-center" style="min-width: 220px;">
-                                <span class="badge @(isTopPick ? "bg-success" : "bg-dark") me-3" style="font-size: 0.9rem; min-width: 35px;">
-                                    @if (isTopPick)
-                                    {
-                                        <i class="bi bi-star-fill"></i>
-                                    }
-                                    else
-                                    {
-                                        @("#" + suggestion.Rank)
-                                    }
-                                </span>
-                                <strong class="fs-5 text-uppercase" style="font-family: monospace; letter-spacing: 2px; @(isTopPick ? "font-weight: bold; font-size: 1.5rem !important;" : "")">
-                                    @suggestion.Word
-                                </strong>
-                                @if (isTopPick && suggestion.ConfidencePercentage >= 75)
-                                {
-                                    <span class="ms-2 text-success"><i class="bi bi-arrow-left-circle-fill"></i> BEST</span>
-                                }
-                            </div>
-                            <div class="d-flex align-items-center flex-grow-1 ms-4">
-                                <div class="progress flex-grow-1 me-3" style="height: 25px; max-width: 300px;">
-                                    <div class="progress-bar bg-@confidenceClass @(isTopPick ? "progress-bar-striped progress-bar-animated" : "")" role="progressbar" 
-                                         style="width: @(progressWidth)%" 
-                                         aria-valuenow="@progressWidth" aria-valuemin="0" aria-valuemax="100">
-                                        <strong>@suggestion.ConfidencePercentage.ToString("F1")%</strong>
-                                    </div>
-                                </div>
-                                <span class="badge bg-@confidenceClass" style="min-width: 70px; font-size: 0.95rem;">@suggestion.ConfidencePercentage.ToString("F1")%</span>
-                            </div>
                         </div>
-                    }
-                </div>
-                @if (possibleWords.Count > 50)
-                {
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> Showing top 50 of <strong>@possibleWords.Count</strong> words. 
-                        Add more clues to narrow down the results. Focus on the top-ranked suggestions.
-                    </div>
+                    </button>
                 }
-            }
-            else if (possibleWords != null)
+            </div>
+
+            @if (possibleWords.Count > 50)
             {
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i> No matching words found. Try adjusting your clues.
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Showing top 50 of <strong>@possibleWords.Count</strong> words.
                 </div>
             }
+        }
+        else if (possibleWords != null)
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> No matching words found. Try adjusting your tiles.
+            </div>
+        }
+        else if (!guesses.Any(g => g.IsLocked))
+        {
+            <!-- Show recommended starting words when no guesses locked yet -->
+            <div class="alert alert-info">
+                <h4 class="mb-1">
+                    <i class="bi bi-lightbulb-fill"></i> Recommended Starting Words
+                </h4>
+                <small class="text-muted">Click a word to use it, or use the arrows on the first row. Words are ranked by effectiveness.</small>
+            </div>
+
+            <div class="suggestions-grid mb-4">
+                @for (int i = 0; i < Math.Min(50, bestStartingWords.Count); i++)
+                {
+                    var word = bestStartingWords[i];
+                    var isTopPick = i == 0;
+                    // Estimate remaining words after this guess (top words narrow to ~100-300, lower tier ~500-1000)
+                    var estimatedRemaining = i < 5 ? 150 + (i * 30) : 
+                                           i < 15 ? 250 + (i * 40) :
+                                           i < 30 ? 500 + (i * 30) :
+                                           800 + (i * 25);
+                    var wordsEliminated = totalWordCount - estimatedRemaining;
+                    var effectivenessClass = i < 5 ? "badge-success" :
+                                            i < 15 ? "badge-info" :
+                                            i < 30 ? "badge-warning" : "badge-secondary";
+                    
+                    <button class="suggestion-card @(isTopPick ? "top-pick" : "")"
+                            @onclick="() => SelectWord(word)">
+                        <div class="suggestion-word">@word.ToUpper()</div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="badge @effectivenessClass" title="Estimated words eliminated">
+                                ~@wordsEliminated.ToString("N0") eliminated
+                            </span>
+                            @if (isTopPick)
+                            {
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-star-fill"></i> BEST
+                                </span>
+                            }
+                            else
+                            {
+                                <small class="text-muted">#@(i + 1)</small>
+                            }
+                        </div>
+                    </button>
+                }
+            </div>
+        }
+
+        <!-- Instructions -->
+        <div class="mt-5 pt-4 border-top">
+            <h5>How to Use</h5>
+            <ol>
+                <li><strong>Starting Word:</strong> The first row auto-populates with a starting word.
+                    <ul>
+                        <li>Use <kbd>←</kbd> <kbd>→</kbd> arrow keys or click the arrow buttons to cycle through different options</li>
+                        <li>Click <i class="bi bi-shuffle"></i> shuffle to get a random suggestion</li>
+                        <li>Click <i class="bi bi-pencil"></i> edit to manually type your own word</li>
+                    </ul>
+                </li>
+                <li><strong>Mark Results:</strong> Click each letter (or use <kbd>Tab</kbd> to navigate) to cycle through colors based on Wordle feedback:
+                    <ul>
+                        <li><span class="badge bg-secondary">Gray</span> = Letter not in word</li>
+                        <li><span class="badge bg-warning">Yellow</span> = Letter in word, wrong position</li>
+                        <li><span class="badge bg-success">Green</span> = Letter in correct position</li>
+                    </ul>
+                </li>
+                <li><strong>Lock Guess:</strong> Press <kbd>Enter</kbd> or click the <i class="bi bi-check-lg"></i> checkmark to lock your guess. The next row will automatically populate with the best suggestion.</li>
+                <li><strong>Auto-Complete:</strong> When only one possible word remains, it will automatically fill and lock as the answer!</li>
+                <li><strong>Adjust:</strong> Click <i class="bi bi-lock-fill"></i> Locked to unlock and modify a guess, or <i class="bi bi-trash"></i> to remove it.</li>
+                <li><strong>Keyboard Shortcuts:</strong>
+                    <ul>
+                        <li><kbd>Tab</kbd> - Navigate through letter tiles</li>
+                        <li><kbd>←</kbd> <kbd>→</kbd> - Cycle word suggestions</li>
+                        <li><kbd>Enter</kbd> - Lock current guess</li>
+                        <li><kbd>Space</kbd> or <kbd>Click</kbd> - Change tile color</li>
+                    </ul>
+                </li>
+            </ol>
         </div>
-    </div>
+    }
 
     <!-- Footer with version and GitHub link -->
     <footer class="mt-5 pt-4 pb-3 border-top text-center text-muted">
@@ -363,11 +339,43 @@
             <a href="@githubUrl" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
                 <i class="bi bi-github"></i> View on GitHub
             </a>
+            <span>•</span>
+            <a href="@GetBugReportUrl()" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-bug"></i> Submit a Bug
+            </a>
         </div>
     </footer>
 </div>
 
 @code {
+    // Letter state enum
+    public enum LetterState
+    {
+        Gray,    // Not in word
+        Yellow,  // In word, wrong position
+        Green    // Correct position
+    }
+
+    // Class to represent a single guess
+    public class Guess
+    {
+        public string Word { get; set; } = "";
+        public LetterState[] States { get; set; } = new LetterState[5];
+        public List<string> AvailableSuggestions { get; set; } = new();
+        public int CurrentSuggestionIndex { get; set; } = 0;
+        public bool IsLocked { get; set; } = false;
+        public bool IsEditing { get; set; } = false;
+        public string EditingWord { get; set; } = "";
+
+        public Guess()
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                States[i] = LetterState.Gray;
+            }
+        }
+    }
+
     private static readonly string appVersion = Assembly.GetExecutingAssembly()
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion 
         ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString() 
@@ -377,21 +385,18 @@
         .GetCustomAttributes<AssemblyMetadataAttribute>()
         .FirstOrDefault(a => a.Key == "RepositoryUrl")?.Value 
         ?? "https://github.com/dkopec/solve-wordle";
-    
+
     private bool isInitialized = false;
     private bool isFiltering = false;
+    private bool isDarkMode = false;
+    private bool isSolved = false;
     private WordleSolver? solver;
     private List<string> bestStartingWords = new();
-    private string? guessInOne;
-    private int guessInOneOffset = 0;
+    private int suggestionOffset = 0;
+    private int totalWordCount = 0;
 
-    private string[] correctLetters = new string[5] { "", "", "", "", "" };
-    private List<string[]> wrongPositionRows = new();
-    private List<string[]> excludedLetterRows = new();
-    private bool excludePastAnswers = false;
-
+    private List<Guess> guesses = new();
     private List<WordSuggestion>? possibleWords;
-    private List<WordSuggestion>? strategicWords;
 
     protected override async Task OnInitializedAsync()
     {
@@ -405,12 +410,23 @@
             WordListService.GetCommonWords()
         );
 
-        bestStartingWords = solver.GetBestStartingWords(5);
-        guessInOne = solver.GetGuessInOne();
+        totalWordCount = WordListService.GetWords().Count;
+        bestStartingWords = solver.GetBestStartingWords(50);
 
-        // Initialize with one empty row each
-        wrongPositionRows.Add(new string[5] { "", "", "", "", "" });
-        excludedLetterRows.Add(new string[5] { "", "", "", "", "" });
+        // Initialize with 6 empty rows (standard Wordle)
+        for (int i = 0; i < 6; i++)
+        {
+            guesses.Add(new Guess());
+        }
+
+        // Auto-populate first row with a starting word and available suggestions
+        if (bestStartingWords.Any())
+        {
+            var firstGuess = guesses[0];
+            firstGuess.AvailableSuggestions = bestStartingWords.ToList();
+            firstGuess.Word = firstGuess.AvailableSuggestions[0].ToUpper();
+            firstGuess.CurrentSuggestionIndex = 0;
+        }
 
         isInitialized = true;
     }
@@ -421,302 +437,496 @@
         {
             try
             {
-                // Load theme preference
                 var theme = await JS.InvokeAsync<string>("localStorage.getItem", "theme");
                 isDarkMode = theme == "dark";
                 await ApplyTheme();
+                
                 StateHasChanged();
+                
+                // Focus the first tile after initial render and theme is applied
+                await Task.Delay(250);
+                try
+                {
+                    var focused = await JS.InvokeAsync<bool>("focusFirstTile");
+                    if (!focused)
+                    {
+                        Console.WriteLine("Failed to focus first tile");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error focusing first tile: {ex.Message}");
+                }
             }
             catch
             {
                 // localStorage not available
             }
+        }
+    }
 
-            // Setup auto-focus
-            try
+    private void SelectWord(string word)
+    {
+        // Find first unlocked row with a word (current working row)
+        var currentRow = guesses.FirstOrDefault(g => !string.IsNullOrEmpty(g.Word) && !g.IsLocked);
+        var rowIndex = currentRow != null ? guesses.IndexOf(currentRow) : -1;
+        
+        if (currentRow != null)
+        {
+            // Replace word in current working row
+            currentRow.Word = word.ToUpper();
+            // Reset all tiles to gray
+            for (int i = 0; i < 5; i++)
             {
-                await JS.InvokeVoidAsync("setupAutoFocus");
+                currentRow.States[i] = LetterState.Gray;
             }
-            catch
+            
+            // Inherit green letters from all previous locked guesses
+            if (rowIndex > 0)
             {
-                // Function not available yet
+                foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+                {
+                    for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < currentRow.Word.Length; i++)
+                    {
+                        if (prevGuess.States[i] == LetterState.Green)
+                        {
+                            // Check if the letter in the new word matches the green letter position
+                            if (char.ToLower(currentRow.Word[i]) == char.ToLower(prevGuess.Word[i]))
+                            {
+                                currentRow.States[i] = LetterState.Green;
+                            }
+                        }
+                    }
+                }
             }
         }
         else
         {
-            // Re-setup auto-focus after state changes
-            try
+            // Fallback: find first empty row if no unlocked row found
+            var emptyRow = guesses.FirstOrDefault(g => string.IsNullOrEmpty(g.Word));
+            if (emptyRow != null)
             {
-                await JS.InvokeVoidAsync("setupAutoFocus");
-            }
-            catch
-            {
-                // Function not available
-            }
-        }
-    }
-
-    private async Task OnCorrectLetterInput(int index, ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString()?.ToUpper() ?? "";
-        if (value.Length > 0 && !char.IsLetter(value[0]))
-        {
-            correctLetters[index] = "";
-            return;
-        }
-        var letter = value.Length > 0 ? value.Substring(0, 1) : "";
-        correctLetters[index] = letter;
-        
-        // Auto-focus to next box when letter is entered
-        if (!string.IsNullOrEmpty(letter) && index < 4)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"correct-{index + 1}");
-        }
-    }
-
-    private async Task OnCorrectLetterKeyDown(int index, KeyboardEventArgs e)
-    {
-        if (e.Key == "Backspace" && string.IsNullOrEmpty(correctLetters[index]) && index > 0)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"correct-{index - 1}");
-        }
-        else if (e.Key == "ArrowLeft" && index > 0)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"correct-{index - 1}");
-        }
-        else if (e.Key == "ArrowRight" && index < 4)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"correct-{index + 1}");
-        }
-    }
-
-    private async Task OnWrongPosInput(int row, int pos, ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString()?.ToUpper() ?? "";
-        if (value.Length > 0 && !char.IsLetter(value[0]))
-        {
-            wrongPositionRows[row][pos] = "";
-            return;
-        }
-        var letter = value.Length > 0 ? value.Substring(0, 1) : "";
-        wrongPositionRows[row][pos] = letter;
-        
-        // Auto-focus to next box when letter is entered
-        if (!string.IsNullOrEmpty(letter) && pos < 4)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"wrong-{row}-{pos + 1}");
-        }
-    }
-
-    private async Task OnWrongPosKeyDown(int row, int pos, KeyboardEventArgs e)
-    {
-        if (e.Key == "Backspace" && string.IsNullOrEmpty(wrongPositionRows[row][pos]) && pos > 0)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"wrong-{row}-{pos - 1}");
-        }
-        else if (e.Key == "ArrowLeft" && pos > 0)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"wrong-{row}-{pos - 1}");
-        }
-        else if (e.Key == "ArrowRight" && pos < 4)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"wrong-{row}-{pos + 1}");
-        }
-    }
-
-    private void AddWrongPosRow()
-    {
-        wrongPositionRows.Add(new string[5] { "", "", "", "", "" });
-    }
-
-    private void RemoveWrongPosRow(int index)
-    {
-        if (wrongPositionRows.Count > 1)
-        {
-            wrongPositionRows.RemoveAt(index);
-        }
-    }
-
-    private async Task OnExcludedLetterInput(int row, int pos, ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString()?.ToUpper() ?? "";
-        if (value.Length > 0 && !char.IsLetter(value[0]))
-        {
-            excludedLetterRows[row][pos] = "";
-            return;
-        }
-
-        // Check for duplicates in correct or wrong positions
-        var letter = value.Length > 0 ? value.Substring(0, 1) : "";
-        if (!string.IsNullOrEmpty(letter))
-        {
-            if (correctLetters.Any(l => l.Equals(letter, StringComparison.OrdinalIgnoreCase)))
-            {
-                excludedLetterRows[row][pos] = "";
-                return;
-            }
-
-            var allWrongPos = wrongPositionRows.SelectMany(r => r).Where(l => !string.IsNullOrEmpty(l));
-            if (allWrongPos.Any(l => l.Equals(letter, StringComparison.OrdinalIgnoreCase)))
-            {
-                excludedLetterRows[row][pos] = "";
-                return;
-            }
-        }
-
-        excludedLetterRows[row][pos] = letter;
-
-        // Auto-focus to next box when letter is entered
-        if (!string.IsNullOrEmpty(letter))
-        {
-            if (pos < 4)
-            {
-                // Move to next position in same row
-                await JS.InvokeVoidAsync("focusElement", $"excluded-{row}-{pos + 1}");
-            }
-            else if (row == excludedLetterRows.Count - 1)
-            {
-                // Last position of last row - add new row and focus first box
-                excludedLetterRows.Add(new string[5] { "", "", "", "", "" });
-                StateHasChanged(); // Ensure the new row is rendered
-                await Task.Delay(50); // Give Blazor time to render
-                await JS.InvokeVoidAsync("focusElement", $"excluded-{row + 1}-0");
-            }
-            else
-            {
-                // Move to first position of next row
-                await JS.InvokeVoidAsync("focusElement", $"excluded-{row + 1}-0");
-            }
-        }
-    }
-
-    private async Task OnExcludedLetterKeyDown(int row, int pos, KeyboardEventArgs e)
-    {
-        if (e.Key == "Backspace" && string.IsNullOrEmpty(excludedLetterRows[row][pos]))
-        {
-            if (pos > 0)
-            {
-                await JS.InvokeVoidAsync("focusElement", $"excluded-{row}-{pos - 1}");
-            }
-            else if (row > 0)
-            {
-                await JS.InvokeVoidAsync("focusElement", $"excluded-{row - 1}-4");
-            }
-        }
-        else if (e.Key == "ArrowLeft" && pos > 0)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"excluded-{row}-{pos - 1}");
-        }
-        else if (e.Key == "ArrowRight" && pos < 4)
-        {
-            await JS.InvokeVoidAsync("focusElement", $"excluded-{row}-{pos + 1}");
-        }
-    }
-
-    private async Task OnInputFocus(FocusEventArgs e)
-    {
-        // Handled by JavaScript
-    }
-
-    private async Task FindWords()
-    {
-        if (solver == null) return;
-
-        // Set loading state
-        isFiltering = true;
-        StateHasChanged();
-
-        // Add a small delay to ensure the loading animation displays
-        // (most operations are fast, but this provides visual feedback)
-        await Task.Delay(100);
-
-        try
-        {
-            // Build correct positions string
-            var correctPositions = string.Join("", correctLetters.Select(l => string.IsNullOrEmpty(l) ? "_" : l.ToLower()));
-
-            // Build wrong positions string
-            var wrongPositionsList = new List<string>();
-            for (int row = 0; row < wrongPositionRows.Count; row++)
-            {
-                for (int pos = 0; pos < 5; pos++)
+                emptyRow.Word = word.ToUpper();
+                // Initialize all tiles to gray
+                for (int i = 0; i < 5; i++)
                 {
-                    var letter = wrongPositionRows[row][pos];
-                    if (!string.IsNullOrEmpty(letter))
+                    emptyRow.States[i] = LetterState.Gray;
+                }
+            }
+        }
+    }
+
+    private void CycleTileState(int rowIndex, int letterIndex)
+    {
+        var guess = guesses[rowIndex];
+        
+        // Only allow clicking if the row has a word and is not locked
+        if (string.IsNullOrEmpty(guess.Word) || letterIndex >= guess.Word.Length || guess.IsLocked)
+            return;
+
+        // Cycle through states: Gray → Yellow → Green → Gray
+        guess.States[letterIndex] = guess.States[letterIndex] switch
+        {
+            LetterState.Gray => LetterState.Yellow,
+            LetterState.Yellow => LetterState.Green,
+            LetterState.Green => LetterState.Gray,
+            _ => LetterState.Gray
+        };
+    }
+
+    private void CycleSuggestion(int rowIndex, int direction)
+    {
+        var guess = guesses[rowIndex];
+        if (guess.AvailableSuggestions.Count == 0) return;
+
+        guess.CurrentSuggestionIndex += direction;
+        if (guess.CurrentSuggestionIndex < 0)
+            guess.CurrentSuggestionIndex = guess.AvailableSuggestions.Count - 1;
+        else if (guess.CurrentSuggestionIndex >= guess.AvailableSuggestions.Count)
+            guess.CurrentSuggestionIndex = 0;
+
+        // Update the word in the row
+        guess.Word = guess.AvailableSuggestions[guess.CurrentSuggestionIndex].ToUpper();
+        
+        // Reset states to gray first
+        for (int i = 0; i < 5; i++)
+        {
+            guess.States[i] = LetterState.Gray;
+        }
+        
+        // Inherit green letters from all previous locked guesses
+        foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+        {
+            for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < guess.Word.Length; i++)
+            {
+                if (prevGuess.States[i] == LetterState.Green)
+                {
+                    // Check if the letter in the new word matches the green letter position
+                    if (char.ToLower(guess.Word[i]) == char.ToLower(prevGuess.Word[i]))
                     {
-                        wrongPositionsList.Add($"{letter.ToLower()}:{pos + 1}");
+                        guess.States[i] = LetterState.Green;
                     }
                 }
             }
-            var wrongPositions = string.Join(", ", wrongPositionsList);
+        }
+    }
 
-            // Build excluded letters string
-            var excludedLetters = string.Join("", excludedLetterRows.SelectMany(r => r).Where(l => !string.IsNullOrEmpty(l)).Select(l => l.ToLower()));
+    private async Task LockGuess(int rowIndex)
+    {
+        var guess = guesses[rowIndex];
+        guess.IsLocked = true;
+
+        // Check if all letters are green (solved)
+        bool allGreen = guess.States.All(s => s == LetterState.Green);
+        if (allGreen)
+        {
+            isSolved = true;
+            return; // Don't populate next row
+        }
+
+        // Find matching words based on all locked guesses
+        await FindWordsFromGuesses();
+
+        // Populate next row with top suggestion if available
+        if (rowIndex < guesses.Count - 1 && possibleWords != null && possibleWords.Any())
+        {
+            var nextGuess = guesses[rowIndex + 1];
+            nextGuess.AvailableSuggestions = possibleWords.Take(10).Select(w => w.Word).ToList();
+            if (nextGuess.AvailableSuggestions.Any())
+            {
+                nextGuess.Word = nextGuess.AvailableSuggestions[0].ToUpper();
+                nextGuess.CurrentSuggestionIndex = 0;
+                
+                // Initialize all tiles to gray first
+                for (int i = 0; i < 5; i++)
+                {
+                    nextGuess.States[i] = LetterState.Gray;
+                }
+                
+                // Inherit green letters from all previous locked guesses
+                foreach (var prevGuess in guesses.Take(rowIndex + 1).Where(g => g.IsLocked))
+                {
+                    for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < nextGuess.Word.Length; i++)
+                    {
+                        if (prevGuess.States[i] == LetterState.Green)
+                        {
+                            // Check if the letter in the new word matches the green letter position
+                            if (char.ToLower(nextGuess.Word[i]) == char.ToLower(prevGuess.Word[i]))
+                            {
+                                nextGuess.States[i] = LetterState.Green;
+                            }
+                        }
+                    }
+                }
+                
+                // If only one word remains, auto-lock it and mark all as green (it's the answer)
+                if (possibleWords.Count == 1)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        nextGuess.States[i] = LetterState.Green;
+                    }
+                    nextGuess.IsLocked = true;
+                    isSolved = true;
+                }
+            }
+        }
+    }
+
+    private void UnlockGuess(int rowIndex)
+    {
+        var guess = guesses[rowIndex];
+        guess.IsLocked = false;
+        guess.IsEditing = false;
+        isSolved = false; // Clear solved state
+
+        // Clear all rows after this one
+        for (int i = rowIndex + 1; i < guesses.Count; i++)
+        {
+            guesses[i].Word = "";
+            guesses[i].IsLocked = false;
+            guesses[i].IsEditing = false;
+            guesses[i].AvailableSuggestions.Clear();
+            guesses[i].CurrentSuggestionIndex = 0;
+            for (int j = 0; j < 5; j++)
+            {
+                guesses[i].States[j] = LetterState.Gray;
+            }
+        }
+
+        // Clear results
+        possibleWords = null;
+    }
+
+#pragma warning disable CS0649 // Field is assigned via @ref
+    private ElementReference editInputRef;
+#pragma warning restore CS0649
+
+    private async Task EditGuess(int rowIndex)
+    {
+        if (rowIndex < guesses.Count)
+        {
+            var guess = guesses[rowIndex];
+            guess.IsEditing = true;
+            guess.EditingWord = ""; // Clear the word when entering edit mode
+            StateHasChanged();
+            
+            // Focus the input after render
+            await Task.Delay(50);
+            try
+            {
+                await editInputRef.FocusAsync();
+            }
+            catch
+            {
+                // Focus failed, ignore
+            }
+        }
+    }
+
+    private void ConfirmEdit(int rowIndex)
+    {
+        if (rowIndex < guesses.Count)
+        {
+            var guess = guesses[rowIndex];
+            
+            if (guess.EditingWord.Length == 5)
+            {
+                guess.Word = guess.EditingWord.ToUpper();
+                guess.IsEditing = false;
+                
+                // Reset all states to gray for manual entry
+                for (int i = 0; i < 5; i++)
+                {
+                    guess.States[i] = LetterState.Gray;
+                }
+                
+                // Inherit green letters from previous locked guess
+                if (rowIndex > 0)
+                {
+                    var previousGuess = guesses[rowIndex - 1];
+                    if (previousGuess.IsLocked)
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (previousGuess.States[i] == LetterState.Green && 
+                                guess.Word.Length > i && 
+                                previousGuess.Word.Length > i &&
+                                guess.Word[i] == previousGuess.Word[i])
+                            {
+                                guess.States[i] = LetterState.Green;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task ConfirmEditAndSubmit(int rowIndex)
+    {
+        ConfirmEdit(rowIndex);
+        await Task.CompletedTask;
+    }
+
+    private void CancelEdit(int rowIndex)
+    {
+        if (rowIndex < guesses.Count)
+        {
+            guesses[rowIndex].IsEditing = false;
+        }
+    }
+
+    private void RemoveGuess(int rowIndex)
+    {
+        isSolved = false; // Clear solved state
+        
+        // Clear this guess and all subsequent ones
+        for (int i = rowIndex; i < guesses.Count; i++)
+        {
+            guesses[i].Word = "";
+            guesses[i].IsLocked = false;
+            guesses[i].IsEditing = false;
+            guesses[i].AvailableSuggestions.Clear();
+            guesses[i].CurrentSuggestionIndex = 0;
+            for (int j = 0; j < 5; j++)
+            {
+                guesses[i].States[j] = LetterState.Gray;
+            }
+        }
+
+        // If there's a previous locked guess, re-run the filter to populate this row
+        if (rowIndex > 0 && guesses.Take(rowIndex).Any(g => g.IsLocked))
+        {
+            Task.Run(async () => 
+            {
+                await FindWordsFromGuesses();
+                if (possibleWords != null && possibleWords.Any())
+                {
+                    var currentGuess = guesses[rowIndex];
+                    currentGuess.AvailableSuggestions = possibleWords.Take(10).Select(w => w.Word).ToList();
+                    if (currentGuess.AvailableSuggestions.Any())
+                    {
+                        currentGuess.Word = currentGuess.AvailableSuggestions[0].ToUpper();
+                        currentGuess.CurrentSuggestionIndex = 0;
+                        for (int i = 0; i < 5; i++)
+                        {
+                            currentGuess.States[i] = LetterState.Gray;
+                        }
+                    }
+                }
+                StateHasChanged();
+            });
+        }
+        else
+        {
+            // Clear results if no locked guesses remain
+            possibleWords = null;
+        }
+    }
+
+    private void AddGuessRow()
+    {
+        guesses.Add(new Guess());
+    }
+
+    private async Task FindWordsFromGuesses()
+    {
+        if (solver == null) return;
+
+        isFiltering = true;
+        StateHasChanged();
+        await Task.Delay(50);
+
+        try
+        {
+            // Extract correct positions (green letters)
+            var correctPositions = new char[5];
+            for (int i = 0; i < 5; i++)
+            {
+                correctPositions[i] = '_';
+            }
+
+            // Extract wrong positions and excluded letters from locked guesses only
+            var wrongPositionsList = new List<string>();
+            var excludedLetters = new HashSet<char>();
+
+            foreach (var guess in guesses.Where(g => g.IsLocked && !string.IsNullOrEmpty(g.Word)))
+            {
+                for (int i = 0; i < 5 && i < guess.Word.Length; i++)
+                {
+                    var letter = char.ToLower(guess.Word[i]);
+                    var state = guess.States[i];
+
+                    if (state == LetterState.Green)
+                    {
+                        correctPositions[i] = letter;
+                    }
+                    else if (state == LetterState.Yellow)
+                    {
+                        wrongPositionsList.Add($"{letter}:{i + 1}");
+                    }
+                    else if (state == LetterState.Gray)
+                    {
+                        // Only exclude if it's not marked as green or yellow elsewhere
+                        bool isInWordElsewhere = false;
+                        for (int j = 0; j < 5 && j < guess.Word.Length; j++)
+                        {
+                            if (char.ToLower(guess.Word[j]) == letter && 
+                                (guess.States[j] == LetterState.Green || guess.States[j] == LetterState.Yellow))
+                            {
+                                isInWordElsewhere = true;
+                                break;
+                            }
+                        }
+                        if (!isInWordElsewhere)
+                        {
+                            excludedLetters.Add(letter);
+                        }
+                    }
+                }
+            }
+
+            var correctPositionsStr = new string(correctPositions);
+            var wrongPositionsStr = string.Join(", ", wrongPositionsList);
+            var excludedLettersStr = string.Join("", excludedLetters);
 
             // Get results
             possibleWords = solver.GetRankedSuggestions(
-                correctPositions,
-                wrongPositions,
-                excludedLetters,
-                excludePastAnswers
+                correctPositionsStr,
+                wrongPositionsStr,
+                excludedLettersStr,
+                false // Don't exclude past answers by default in new UI
             );
-
-            // Get strategic words
-            if (possibleWords != null && possibleWords.Any())
-            {
-                var possibleWordsList = possibleWords.Select(w => w.Word).ToList();
-                strategicWords = solver.GetStrategicWords(
-                    possibleWordsList,
-                    correctPositions,
-                    excludedLetters,
-                    5
-                );
-            }
         }
         finally
         {
-            // Clear loading state
             isFiltering = false;
+        }
+    }
+
+    private void ShuffleGuess(int rowIndex)
+    {
+        if (rowIndex < guesses.Count)
+        {
+            var guess = guesses[rowIndex];
+            
+            // Get a random word from available suggestions if any
+            if (guess.AvailableSuggestions.Any())
+            {
+                var random = new Random();
+                var randomIndex = random.Next(guess.AvailableSuggestions.Count);
+                guess.Word = guess.AvailableSuggestions[randomIndex].ToUpper();
+                guess.CurrentSuggestionIndex = randomIndex;
+                
+                // Reset states to gray
+                for (int i = 0; i < 5; i++)
+                {
+                    guess.States[i] = LetterState.Gray;
+                }
+                
+                // Inherit green letters from previous guess if available
+                if (rowIndex > 0)
+                {
+                    var previousGuess = guesses[rowIndex - 1];
+                    if (previousGuess.IsLocked)
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (previousGuess.States[i] == LetterState.Green && 
+                                guess.Word.Length > i && 
+                                previousGuess.Word.Length > i &&
+                                guess.Word[i] == previousGuess.Word[i])
+                            {
+                                guess.States[i] = LetterState.Green;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     private void Reset()
     {
-        correctLetters = new string[5] { "", "", "", "", "" };
-        wrongPositionRows = new() { new string[5] { "", "", "", "", "" } };
-        excludedLetterRows = new() { new string[5] { "", "", "", "", "" } };
+        guesses.Clear();
+        for (int i = 0; i < 6; i++)
+        {
+            guesses.Add(new Guess());
+        }
         possibleWords = null;
-        strategicWords = null;
-    }
+        suggestionOffset = 0;
+        isSolved = false; // Clear solved state
 
-    private void UseStartingWord(string word)
-    {
-        for (int i = 0; i < 5 && i < word.Length; i++)
+        // Auto-populate first row with a starting word and suggestions
+        if (bestStartingWords.Any())
         {
-            correctLetters[i] = word[i].ToString().ToUpper();
+            var firstGuess = guesses[0];
+            firstGuess.AvailableSuggestions = bestStartingWords.ToList();
+            firstGuess.Word = bestStartingWords[suggestionOffset].ToUpper();
+            firstGuess.CurrentSuggestionIndex = suggestionOffset;
         }
     }
-
-    private void RefreshGuessInOne()
-    {
-        if (solver == null) return;
-        guessInOneOffset++;
-        guessInOne = solver.GetGuessInOne(guessInOneOffset);
-    }
-
-    private async Task CopyToClipboard(string text)
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
-        }
-        catch
-        {
-            // Clipboard API not available
-        }
-    }
-
-    private bool isDarkMode = false;
 
     private async Task ToggleDarkMode()
     {
@@ -742,5 +952,50 @@
         {
             // DOM manipulation not available
         }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        // Find the current active guess (unlocked with a word)
+        var currentGuess = guesses.FirstOrDefault(g => !g.IsLocked && !string.IsNullOrEmpty(g.Word));
+        if (currentGuess != null && !currentGuess.IsEditing)
+        {
+            var rowIndex = guesses.IndexOf(currentGuess);
+            
+            if (e.Key == "ArrowLeft" && currentGuess.AvailableSuggestions.Count > 1)
+            {
+                CycleSuggestion(rowIndex, -1);
+            }
+            else if (e.Key == "ArrowRight" && currentGuess.AvailableSuggestions.Count > 1)
+            {
+                CycleSuggestion(rowIndex, 1);
+            }
+            else if (e.Key == "Enter")
+            {
+                await LockGuess(rowIndex);
+            }
+        }
+    }
+
+    private string GetBugReportUrl()
+    {
+        // Build game state summary
+        var lockedGuesses = guesses.Where(g => g.IsLocked).ToList();
+        var gameState = lockedGuesses.Any() 
+            ? $"\n\n**Game State:**\n```\nLocked guesses: {lockedGuesses.Count}\n" +
+              $"Current word: {guesses.FirstOrDefault(g => !g.IsLocked && !string.IsNullOrEmpty(g.Word))?.Word ?? "None"}\n" +
+              $"Possible words remaining: {possibleWords?.Count ?? 0}\n" +
+              $"Solved: {isSolved}\n```"
+            : "";
+
+        var additionalContext = $"**App Version:** {appVersion}\n" +
+                               $"**Theme:** {(isDarkMode ? "Dark" : "Light")} mode\n" +
+                               $"**URL:** {githubUrl}\n" +
+                               gameState;
+
+        // URL encode the additional context
+        var encodedContext = Uri.EscapeDataString(additionalContext);
+        
+        return $"{githubUrl}/issues/new?template=bug_report.yml&labels=bug&additional={encodedContext}";
     }
 }

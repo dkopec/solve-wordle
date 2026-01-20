@@ -207,6 +207,18 @@ var result = from word in words
 
 @* ✅ Parameter passing *@
 <button @onclick="@((e) => OnItemClick(item.Id))">Select</button>
+
+@* ✅ Keyboard event handling *@
+<div @onkeydown="HandleKeyDown">
+
+@* ✅ Async keyboard handlers *@
+private async Task HandleKeyDown(KeyboardEventArgs e)
+{
+    if (e.Key == "Enter")
+    {
+        await ConfirmAction();
+    }
+}
 ```
 
 ### JavaScript Style
