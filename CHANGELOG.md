@@ -1,3 +1,10 @@
+## [2.0.6](https://github.com/dkopec/solve-wordle/compare/v2.0.5...v2.0.6) (2026-01-20)
+
+
+### Reverts
+
+* Revert "fix: add release build optimizations and exclude backup files from publish" ([5465ea8](https://github.com/dkopec/solve-wordle/commit/5465ea8eaf4553e64e94bc63e743aae9cf105f2c))
+
 ## [2.0.5](https://github.com/dkopec/solve-wordle/compare/v2.0.4...v2.0.5) (2026-01-20)
 
 
