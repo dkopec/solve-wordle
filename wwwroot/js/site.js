@@ -653,88 +653,112 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Focus management for Blazor WASM keyboard navigation
-function focusFirstTile() {
-    // Find the first wordle tile button in the first row
-    const firstTile = document.querySelector('.wordle-row button.wordle-tile:not([disabled])');
-    if (firstTile) {
-        console.log('Focusing first tile:', firstTile);
-        firstTile.focus();
-        return true;
-    } else {
-        console.warn('Could not find first tile');
-        return false;
-    }
-}
-
-function focusRowTile(rowIndex) {
-    // Find the row by data attribute
-    const row = document.querySelector(`.wordle-row[data-row-index="${rowIndex}"]`);
-    if (row) {
-        const firstTile = row.querySelector('button.wordle-tile:not([disabled])');
+window.focusFirstTile = function() {
+    try {
+        // Find the first wordle tile button in the first row
+        const firstTile = document.querySelector('.wordle-row button.wordle-tile:not([disabled])');
         if (firstTile) {
-            console.log('Focusing tile in row', rowIndex);
+            console.log('Focusing first tile:', firstTile);
             firstTile.focus();
             return true;
         } else {
-            console.warn('No enabled tiles found in row', rowIndex);
+            // Debug: Check what elements exist
+            const rowExists = document.querySelector('.wordle-row');
+            const tilesExist = document.querySelectorAll('.wordle-tile');
+            console.log('Debug - Row exists:', !!rowExists, ', Tiles found:', tilesExist.length);
+            return false;
         }
-    } else {
-        console.warn('Could not find row with index', rowIndex);
+    } catch (error) {
+        console.error('Error focusing first tile:', error);
+        return false;
     }
-    return false;
-}
+};
+
+window.focusRowTile = function(rowIndex) {
+    try {
+        // Find the row by data attribute
+        const row = document.querySelector(`.wordle-row[data-row-index="${rowIndex}"]`);
+        if (row) {
+            const firstTile = row.querySelector('button.wordle-tile:not([disabled])');
+            if (firstTile) {
+                console.log('Focusing tile in row', rowIndex);
+                firstTile.focus();
+                return true;
+            } else {
+                console.warn('No enabled tiles found in row', rowIndex);
+                return false;
+            }
+        } else {
+            console.warn('Could not find row with index', rowIndex);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error focusing row tile:', error);
+        return false;
+    }
+};
 
 // Get browser information
 window.getBrowserInfo = function() {
-    const ua = navigator.userAgent;
-    let browserName = "Unknown";
-    let browserVersion = "Unknown";
-    
-    // Detect browser
-    if (ua.indexOf("Firefox") > -1) {
-        browserName = "Firefox";
-        browserVersion = ua.match(/Firefox\/(\d+\.\d+)/)?.[1] || "Unknown";
-    } else if (ua.indexOf("Edg") > -1) {
-        browserName = "Edge";
-        browserVersion = ua.match(/Edg\/(\d+\.\d+)/)?.[1] || "Unknown";
-    } else if (ua.indexOf("Chrome") > -1) {
-        browserName = "Chrome";
-        browserVersion = ua.match(/Chrome\/(\d+\.\d+)/)?.[1] || "Unknown";
-    } else if (ua.indexOf("Safari") > -1) {
-        browserName = "Safari";
-        browserVersion = ua.match(/Version\/(\d+\.\d+)/)?.[1] || "Unknown";
+    try {
+        const ua = navigator.userAgent;
+        let browserName = "Unknown";
+        let browserVersion = "Unknown";
+        
+        // Detect browser
+        if (ua.indexOf("Firefox") > -1) {
+            browserName = "Firefox";
+            browserVersion = ua.match(/Firefox\/(\d+\.\d+)/)?.[1] || "Unknown";
+        } else if (ua.indexOf("Edg") > -1) {
+            browserName = "Edge";
+            browserVersion = ua.match(/Edg\/(\d+\.\d+)/)?.[1] || "Unknown";
+        } else if (ua.indexOf("Chrome") > -1) {
+            browserName = "Chrome";
+            browserVersion = ua.match(/Chrome\/(\d+\.\d+)/)?.[1] || "Unknown";
+        } else if (ua.indexOf("Safari") > -1) {
+            browserName = "Safari";
+            browserVersion = ua.match(/Version\/(\d+\.\d+)/)?.[1] || "Unknown";
+        }
+        
+        return `${browserName} ${browserVersion}`;
+    } catch (error) {
+        console.error('Error getting browser info:', error);
+        return "Unknown";
     }
-    
-    return `${browserName} ${browserVersion}`;
 };
 
 // Get OS information
 window.getOSInfo = function() {
-    const ua = navigator.userAgent;
-    let os = "Unknown";
-    
-    if (ua.indexOf("Win") > -1) {
-        os = "Windows";
-        if (ua.indexOf("Windows NT 10.0") > -1) os = "Windows 10/11";
-        else if (ua.indexOf("Windows NT 6.3") > -1) os = "Windows 8.1";
-        else if (ua.indexOf("Windows NT 6.2") > -1) os = "Windows 8";
-    } else if (ua.indexOf("Mac") > -1) {
-        os = "macOS";
-        const match = ua.match(/Mac OS X (\d+[._]\d+)/);
-        if (match) os = `macOS ${match[1].replace(/_/g, '.')}`;
-    } else if (ua.indexOf("Linux") > -1) {
-        os = "Linux";
-    } else if (ua.indexOf("Android") > -1) {
-        os = "Android";
-        const match = ua.match(/Android (\d+\.\d+)/);
-        if (match) os = `Android ${match[1]}`;
-    } else if (ua.indexOf("iOS") > -1 || ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) {
-        os = "iOS";
-        const match = ua.match(/OS (\d+_\d+)/);
-        if (match) os = `iOS ${match[1].replace(/_/g, '.')}`;
+    try {
+        const ua = navigator.userAgent;
+        let os = "Unknown";
+        
+        if (ua.indexOf("Win") > -1) {
+            os = "Windows";
+            if (ua.indexOf("Windows NT 10.0") > -1) os = "Windows 10/11";
+            else if (ua.indexOf("Windows NT 6.3") > -1) os = "Windows 8.1";
+            else if (ua.indexOf("Windows NT 6.2") > -1) os = "Windows 8";
+        } else if (ua.indexOf("Mac") > -1) {
+            os = "macOS";
+            const match = ua.match(/Mac OS X (\d+[._]\d+)/);
+            if (match) os = `macOS ${match[1].replace(/_/g, '.')}`;
+        } else if (ua.indexOf("Linux") > -1) {
+            os = "Linux";
+        } else if (ua.indexOf("Android") > -1) {
+            os = "Android";
+            const match = ua.match(/Android (\d+\.\d+)/);
+            if (match) os = `Android ${match[1]}`;
+        } else if (ua.indexOf("iOS") > -1 || ua.indexOf("iPhone") > -1 || ua.indexOf("iPad") > -1) {
+            os = "iOS";
+            const match = ua.match(/OS (\d+_\d+)/);
+            if (match) os = `iOS ${match[1].replace(/_/g, '.')}`;
+        }
+        
+        return os;
+    } catch (error) {
+        console.error('Error getting OS info:', error);
+        return "Unknown";
     }
-    
-    return os;
 };
 
 // Get console errors (capture from this point forward)
@@ -748,3 +772,35 @@ window.consoleErrors = [];
         originalError.apply(console, args);
     };
 })();
+
+// Get console errors as array
+window.getConsoleErrors = function() {
+    try {
+        return window.consoleErrors || [];
+    } catch (error) {
+        console.error('Error getting console errors:', error);
+        return [];
+    }
+};
+
+// Set theme attribute on document element
+window.setTheme = function(theme) {
+    try {
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        return true;
+    } catch (error) {
+        console.error('Error setting theme:', error);
+        return false;
+    }
+};
+
+// Open URL in new tab/window
+window.openUrl = function(url) {
+    try {
+        window.open(url, '_blank');
+        return true;
+    } catch (error) {
+        console.error('Error opening URL:', error);
+        return false;
+    }
+};
