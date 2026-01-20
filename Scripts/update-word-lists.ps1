@@ -39,6 +39,7 @@ $BackupDir = Join-Path $DataDir "backups"
 # Data sources
 $WordleAnswersUrl = "https://www.nytimes.com/games-assets/v2/wordle.json"
 $ScrabbleWordsUrl = "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt"
+$WordFrequencyUrl = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-usa.txt"
 
 function Write-Log {
     param(
@@ -165,6 +166,32 @@ function Get-ComprehensiveWordList {
     return $allWords | Sort-Object
 }
 
+function Get-WordFrequencies {
+    Write-Log "Fetching word frequency data..."
+    $frequencyMap = @{}
+    
+    try {
+        $response = Invoke-WebRequest -Uri $WordFrequencyUrl -UseBasicParsing -TimeoutSec 15
+        $lines = $response.Content -split "`n"
+        
+        $rank = 1
+        foreach ($word in $lines) {
+            $word = $word.Trim().ToLower()
+            if ($word -and $word.Length -eq 5 -and $word -match '^[a-z]+$') {
+                $frequencyMap[$word] = $rank
+                $rank++
+            }
+        }
+        
+        Write-Log "Loaded $($frequencyMap.Count) 5-letter word frequencies" -Level DEBUG
+    }
+    catch {
+        Write-Log "Warning: Could not fetch frequency data: $_" -Level WARNING
+    }
+    
+    return $frequencyMap
+}
+
 function Get-CommonWords {
     param(
         [string[]]$AllWords,
@@ -172,37 +199,83 @@ function Get-CommonWords {
     )
     
     Write-Log "Determining common words..."
-    $commonList = [System.Collections.Generic.List[string]]::new()
-    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    
+    # Fetch actual word frequency rankings
+    $frequencyMap = Get-WordFrequencies
+    
+    # Start with candidate words
+    $candidates = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $allWordsSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$AllWords, [StringComparer]::OrdinalIgnoreCase)
     
-    # Load existing common words (already frequency-sorted)
-    # IMPORTANT: Preserve this order - scoring algorithm depends on it!
+    # Include past answers (proven good Wordle words)
+    foreach ($word in $PastAnswers) {
+        [void]$candidates.Add($word)
+    }
+    
+    # Include existing common words
     $existingFile = Join-Path $DataDir "common-words.txt"
     if (Test-Path $existingFile) {
         $existingCommon = Get-Content $existingFile -Encoding UTF8
         foreach ($word in $existingCommon) {
             $word = $word.Trim().ToLower()
-            if ($word -and $word.Length -eq 5 -and $word -match '^[a-z]+$' -and $allWordsSet.Contains($word)) {
-                if (-not $seen.Contains($word)) {
-                    $commonList.Add($word)
-                    [void]$seen.Add($word)
-                }
+            if ($word -and $word.Length -eq 5 -and $word -match '^[a-z]+$') {
+                [void]$candidates.Add($word)
             }
         }
     }
     
-    # Add any new past answers at the end (they're proven good words)
-    $sortedAnswers = $PastAnswers | Sort-Object
-    foreach ($word in $sortedAnswers) {
-        if (-not $seen.Contains($word) -and $allWordsSet.Contains($word)) {
-            $commonList.Add($word)
-            [void]$seen.Add($word)
+    # Filter to only include words in comprehensive list
+    $candidates = $candidates | Where-Object { $allWordsSet.Contains($_) }
+    
+    # Sort by actual frequency
+    if ($frequencyMap.Count -gt 0) {
+        Write-Log "Sorting $($candidates.Count) words by frequency..."
+        
+        # Sort by frequency rank (lower rank = more common)
+        $commonList = $candidates | Sort-Object {
+            $word = $_
+            # Primary: frequency rank (words not in map get high rank)
+            $rank = if ($frequencyMap.ContainsKey($word)) {
+                $frequencyMap[$word]
+            } else {
+                999999
+            }
+            # Secondary: alphabetical for consistency
+            "$($rank.ToString('D7'))-$word"
+        }
+    }
+    else {
+        # Fallback: preserve existing order or use alphabetical
+        Write-Log "Warning: Using fallback ordering (no frequency data)" -Level WARNING
+        
+        if (Test-Path $existingFile) {
+            # Preserve existing order
+            $commonList = [System.Collections.Generic.List[string]]::new()
+            $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            
+            $existingCommon = Get-Content $existingFile -Encoding UTF8
+            foreach ($word in $existingCommon) {
+                $word = $word.Trim().ToLower()
+                if ($candidates -contains $word -and -not $seen.Contains($word)) {
+                    $commonList.Add($word)
+                    [void]$seen.Add($word)
+                }
+            }
+            
+            # Add remaining candidates
+            foreach ($word in ($candidates | Where-Object { -not $seen.Contains($_) } | Sort-Object)) {
+                $commonList.Add($word)
+            }
+            
+            $commonList = $commonList.ToArray()
+        }
+        else {
+            $commonList = $candidates | Sort-Object
         }
     }
     
     Write-Log "Determined $($commonList.Count) common words (frequency-ordered)"
-    return $commonList.ToArray()
+    return $commonList
 }
 
 function Backup-Files {

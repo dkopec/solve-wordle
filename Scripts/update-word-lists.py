@@ -28,6 +28,8 @@ BACKUP_DIR = Path("wwwroot/data/backups")
 WORDLE_ANSWERS_URL = "https://www.nytimes.com/games-assets/v2/wordle.json"
 WORDLE_JS_URL = "https://www.nytimes.com/games-assets/v2/wordle/{hash}/wordle.{hash}.js"
 FALLBACK_SCRABBLE_URL = "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt"
+# Word frequency data (ranked by usage frequency in American English)
+WORD_FREQUENCY_URL = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-usa.txt"
 
 class WordListUpdater:
     def __init__(self, verbose=False, dry_run=False):
@@ -144,32 +146,88 @@ class WordListUpdater:
         
         return all_words
     
+    def fetch_word_frequencies(self) -> dict[str, int]:
+        """
+        Fetch word frequency data from public sources.
+        Returns dictionary mapping word -> rank (1 = most common).
+        """
+        self.log("Fetching word frequency data...")
+        frequency_map = {}
+        
+        try:
+            response = self.fetch_url(WORD_FREQUENCY_URL, timeout=15)
+            if response:
+                lines = response.text.strip().split('\n')
+                for rank, word in enumerate(lines, start=1):
+                    word = word.strip().lower()
+                    if word and len(word) == 5 and word.isalpha():
+                        frequency_map[word] = rank
+                
+                self.verbose_log(f"Loaded {len(frequency_map)} 5-letter word frequencies")
+        except Exception as e:
+            self.log(f"Warning: Could not fetch frequency data: {e}", "WARNING")
+        
+        return frequency_map
+    
     def determine_common_words(self, all_words: Set[str], past_answers: Set[str]) -> List[str]:
         """
-        Determine common words from various sources.
-        IMPORTANT: Maintains frequency-based ordering (most common first).
+        Determine common words and sort by actual frequency.
+        Uses word frequency data from linguistic corpora.
         The WordleSolver scoring algorithm depends on this order!
         """
         self.log("Determining common words...")
-        common_list = []
-        seen = set()
         
-        # Load existing common words (already frequency-sorted)
+        # Fetch actual word frequency rankings
+        frequency_map = self.fetch_word_frequencies()
+        
+        # Start with candidate words
+        candidates = set()
+        
+        # Include past answers (proven good Wordle words)
+        candidates.update(past_answers)
+        
+        # Include existing common words
         existing_file = DATA_DIR / "common-words.txt"
         if existing_file.exists():
             existing_common = existing_file.read_text(encoding='utf-8').strip().split('\n')
             for word in existing_common:
                 word = word.strip().lower()
-                if word and len(word) == 5 and word.isalpha() and word in all_words:
-                    if word not in seen:
+                if word and len(word) == 5 and word.isalpha():
+                    candidates.add(word)
+        
+        # Filter to only include words in comprehensive list
+        candidates = candidates.intersection(all_words)
+        
+        # Sort by actual frequency
+        if frequency_map:
+            self.log(f"Sorting {len(candidates)} words by frequency...")
+            
+            # Sort by frequency rank (lower rank = more common)
+            # Words not in frequency map get high rank (appear at end)
+            common_list = sorted(
+                candidates,
+                key=lambda w: (
+                    frequency_map.get(w, 999999),  # Primary: frequency rank
+                    w  # Secondary: alphabetical for consistency
+                )
+            )
+        else:
+            # Fallback: preserve existing order or use alphabetical
+            self.log("Warning: Using fallback ordering (no frequency data)", "WARNING")
+            if existing_file.exists():
+                # Preserve existing order
+                common_list = []
+                seen = set()
+                for word in existing_common:
+                    word = word.strip().lower()
+                    if word in candidates and word not in seen:
                         common_list.append(word)
                         seen.add(word)
-        
-        # Add any new past answers at the end (they're proven good words)
-        for word in sorted(past_answers):  # Sort new answers alphabetically for consistency
-            if word not in seen and word in all_words:
-                common_list.append(word)
-                seen.add(word)
+                # Add remaining candidates
+                for word in sorted(candidates - seen):
+                    common_list.append(word)
+            else:
+                common_list = sorted(candidates)
         
         self.log(f"Determined {len(common_list)} common words (frequency-ordered)")
         return common_list
