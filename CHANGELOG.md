@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/dkopec/solve-wordle/compare/v1.1.1...v1.1.2) (2026-01-20)
+
+
+### Bug Fixes
+
+* adjust scoring for unique and repeated letters in word suggestions ([af58210](https://github.com/dkopec/solve-wordle/commit/af58210979d49ef394a875b27cf075b3eb970f4c))
+
 ## [1.1.1](https://github.com/dkopec/solve-wordle/compare/v1.1.0...v1.1.1) (2026-01-20)
 
 
