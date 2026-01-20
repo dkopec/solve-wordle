@@ -1,3 +1,10 @@
+## [2.0.5](https://github.com/dkopec/solve-wordle/compare/v2.0.4...v2.0.5) (2026-01-20)
+
+
+### Bug Fixes
+
+* add release build optimizations and exclude backup files from publish ([b88c4b5](https://github.com/dkopec/solve-wordle/commit/b88c4b5791bbd3e9c2556d9aa9375292fa747cd3))
+
 ## [2.0.4](https://github.com/dkopec/solve-wordle/compare/v2.0.3...v2.0.4) (2026-01-20)
 
 
