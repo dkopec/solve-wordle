@@ -9,28 +9,9 @@
     <RepositoryUrl>https://github.com/dkopec/solve-wordle</RepositoryUrl>
   </PropertyGroup>
 
-  <!-- Release build optimizations with wasm-tools -->
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <!-- Enable IL linking (tree shaking) - requires wasm-tools workload -->
-    <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>full</TrimMode>
-    
-    <!-- Enable AOT compilation for better runtime performance (optional - increases build time) -->
-    <!-- <RunAOTCompilation>true</RunAOTCompilation> -->
-    
-    <!-- Compression settings -->
-    <BlazorEnableCompression>true</BlazorEnableCompression>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
-  </ItemGroup>
-
-  <!-- Exclude backup files from publish -->
-  <ItemGroup>
-    <Content Remove="wwwroot\data\backups\**" />
-    <Content Update="wwwroot\data\backups\**" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>
