@@ -50,7 +50,8 @@
                                        maxlength="5"
                                        value="@guesses[rowIndex].EditingWord"
                                        @oninput="@(e => { if (e.Value != null) guesses[rowIndex].EditingWord = e.Value.ToString()!.ToUpper(); })"
-                                       @onkeydown="@(async e => { if (e.Key != null && e.Key == "Enter" && guesses[rowIndex].EditingWord.Length == 5) await ConfirmEditAndSubmit(rowIndex); })"
+                                       @onkeydown="@(async e => { if (e.Key != null && e.Key == "Enter" && guesses[rowIndex].EditingWord.Length == 5) { await ConfirmEditAndSubmit(rowIndex); } })"
+                                       @onkeydown:stopPropagation="true"
                                        placeholder="Type word..." />
                             </div>
                         }
@@ -314,14 +315,15 @@
                         <li><span class="badge bg-success">Green</span> = Letter in correct position</li>
                     </ul>
                 </li>
-                <li><strong>Lock Guess:</strong> Press <kbd>Enter</kbd> or click the <i class="bi bi-check-lg"></i> checkmark to lock your guess. The next row will automatically populate with the best suggestion.</li>
+                <li><strong>Lock Guess:</strong> Click the <i class="bi bi-check-lg"></i> checkmark to lock your guess. The next row will automatically populate with the best suggestion.</li>
+                <li><strong>Edit Mode:</strong> When editing a word, press <kbd>Enter</kbd> to confirm the word (without locking). Then click the checkmark or press <kbd>Enter</kbd> again to lock.</li>
                 <li><strong>Auto-Complete:</strong> When only one possible word remains, it will automatically fill and lock as the answer!</li>
                 <li><strong>Adjust:</strong> Click <i class="bi bi-lock-fill"></i> Locked to unlock and modify a guess, or <i class="bi bi-trash"></i> to remove it.</li>
                 <li><strong>Keyboard Shortcuts:</strong>
                     <ul>
                         <li><kbd>Tab</kbd> - Navigate through letter tiles</li>
                         <li><kbd>←</kbd> <kbd>→</kbd> - Cycle word suggestions</li>
-                        <li><kbd>Enter</kbd> - Lock current guess</li>
+                        <li><kbd>Enter</kbd> - Lock current guess (or confirm edit when in edit mode)</li>
                         <li><kbd>Space</kbd> or <kbd>Click</kbd> - Change tile color</li>
                     </ul>
                 </li>
