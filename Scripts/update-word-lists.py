@@ -144,28 +144,35 @@ class WordListUpdater:
         
         return all_words
     
-    def determine_common_words(self, all_words: Set[str], past_answers: Set[str]) -> Set[str]:
+    def determine_common_words(self, all_words: Set[str], past_answers: Set[str]) -> List[str]:
         """
         Determine common words from various sources.
-        Prioritizes past Wordle answers as they're proven common words.
+        IMPORTANT: Maintains frequency-based ordering (most common first).
+        The WordleSolver scoring algorithm depends on this order!
         """
         self.log("Determining common words...")
-        common = set()
+        common_list = []
+        seen = set()
         
-        # Start with past answers (proven Wordle words)
-        common.update(past_answers)
-        
-        # Load existing common words
+        # Load existing common words (already frequency-sorted)
         existing_file = DATA_DIR / "common-words.txt"
         if existing_file.exists():
-            existing_common = set(existing_file.read_text(encoding='utf-8').strip().split('\n'))
-            common.update(existing_common)
+            existing_common = existing_file.read_text(encoding='utf-8').strip().split('\n')
+            for word in existing_common:
+                word = word.strip().lower()
+                if word and len(word) == 5 and word.isalpha() and word in all_words:
+                    if word not in seen:
+                        common_list.append(word)
+                        seen.add(word)
         
-        # Filter to only include words in comprehensive list
-        common = common.intersection(all_words)
+        # Add any new past answers at the end (they're proven good words)
+        for word in sorted(past_answers):  # Sort new answers alphabetically for consistency
+            if word not in seen and word in all_words:
+                common_list.append(word)
+                seen.add(word)
         
-        self.log(f"Determined {len(common)} common words")
-        return common
+        self.log(f"Determined {len(common_list)} common words (frequency-ordered)")
+        return common_list
     
     def backup_files(self):
         """Create backups of existing data files"""
@@ -183,10 +190,18 @@ class WordListUpdater:
                 backup.write_text(source.read_text(encoding='utf-8'), encoding='utf-8')
                 self.verbose_log(f"Backed up {filename} to {backup}")
     
-    def write_word_file(self, filepath: Path, words: Set[str], description: str):
-        """Write sorted word list to file"""
-        sorted_words = sorted(words)
-        content = '\n'.join(sorted_words)
+    def write_word_file(self, filepath: Path, words, description: str):
+        """Write word list to file"""
+        # For common-words.txt, preserve frequency order; for others, sort alphabetically
+        if filepath.name == "common-words.txt":
+            # Preserve frequency-based ordering (most common first)
+            word_list = words if isinstance(words, list) else sorted(words)
+        else:
+            # Alphabetically sort other word lists
+            word_list = sorted(words) if not isinstance(words, list) else sorted(words)
+        
+        content = '\n'.join(word_list)
+        content = '\n'.join(word_list)
         
         # Check if content changed
         existing_content = ""
@@ -197,13 +212,13 @@ class WordListUpdater:
             self.changes_made = True
             
             if self.dry_run:
-                self.log(f"DRY RUN: Would update {filepath} ({len(sorted_words)} words)")
+                self.log(f"DRY RUN: Would update {filepath} ({len(word_list)} words)")
                 self.log(f"  Current: {len(existing_content.split())} words")
-                self.log(f"  New: {len(sorted_words)} words")
+                self.log(f"  New: {len(word_list)} words")
                 return
             
             filepath.write_text(content, encoding='utf-8')
-            self.log(f"✓ Updated {filepath.name}: {len(sorted_words)} {description}")
+            self.log(f"✓ Updated {filepath.name}: {len(word_list)} {description}")
         else:
             self.log(f"✓ No changes for {filepath.name}")
     

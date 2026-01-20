@@ -172,24 +172,37 @@ function Get-CommonWords {
     )
     
     Write-Log "Determining common words..."
-    $common = @()
+    $commonList = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $allWordsSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$AllWords, [StringComparer]::OrdinalIgnoreCase)
     
-    # Start with past answers (proven Wordle words)
-    $common = @($PastAnswers)
-    
-    # Load existing common words
+    # Load existing common words (already frequency-sorted)
+    # IMPORTANT: Preserve this order - scoring algorithm depends on it!
     $existingFile = Join-Path $DataDir "common-words.txt"
     if (Test-Path $existingFile) {
         $existingCommon = Get-Content $existingFile -Encoding UTF8
-        $common = @($common) + $existingCommon | Select-Object -Unique
+        foreach ($word in $existingCommon) {
+            $word = $word.Trim().ToLower()
+            if ($word -and $word.Length -eq 5 -and $word -match '^[a-z]+$' -and $allWordsSet.Contains($word)) {
+                if (-not $seen.Contains($word)) {
+                    $commonList.Add($word)
+                    [void]$seen.Add($word)
+                }
+            }
+        }
     }
     
-    # Filter to only include words in comprehensive list
-    $allWordsSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$AllWords, [StringComparer]::OrdinalIgnoreCase)
-    $common = $common | Where-Object { $allWordsSet.Contains($_) }
+    # Add any new past answers at the end (they're proven good words)
+    $sortedAnswers = $PastAnswers | Sort-Object
+    foreach ($word in $sortedAnswers) {
+        if (-not $seen.Contains($word) -and $allWordsSet.Contains($word)) {
+            $commonList.Add($word)
+            [void]$seen.Add($word)
+        }
+    }
     
-    Write-Log "Determined $($common.Count) common words"
-    return $common | Sort-Object
+    Write-Log "Determined $($commonList.Count) common words (frequency-ordered)"
+    return $commonList.ToArray()
 }
 
 function Backup-Files {
@@ -221,8 +234,19 @@ function Write-WordFile {
         [string]$Description
     )
     
-    $sortedWords = $Words | Sort-Object
-    $content = $sortedWords -join "`n"
+    # For common-words.txt, preserve frequency order; for others, sort alphabetically
+    $filename = [System.IO.Path]::GetFileName($FilePath)
+    if ($filename -eq "common-words.txt") {
+        # Preserve frequency-based ordering (most common first)
+        $wordList = $Words
+    }
+    else {
+        # Alphabetically sort other word lists
+        $wordList = $Words | Sort-Object
+    }
+    
+    $content = $wordList -join "`n"
+    $content = $wordList -join "`n"
     
     # Check if content changed
     $existingContent = ""
@@ -234,15 +258,15 @@ function Write-WordFile {
         $script:ChangesMade = $true
         
         if ($DryRun) {
-            Write-Log "DRY RUN: Would update $FilePath ($($sortedWords.Count) words)"
+            Write-Log "DRY RUN: Would update $FilePath ($($wordList.Count) words)"
             $existingCount = if ($existingContent) { ($existingContent -split "`n").Count } else { 0 }
             Write-Log "  Current: $existingCount words" -Level DEBUG
-            Write-Log "  New: $($sortedWords.Count) words" -Level DEBUG
+            Write-Log "  New: $($wordList.Count) words" -Level DEBUG
             return
         }
         
         $content | Out-File -FilePath $FilePath -Encoding UTF8 -NoNewline
-        Write-Log "✓ Updated $([System.IO.Path]::GetFileName($FilePath)): $($sortedWords.Count) $Description" -Level SUCCESS
+        Write-Log "✓ Updated $([System.IO.Path]::GetFileName($FilePath)): $($wordList.Count) $Description" -Level SUCCESS
     }
     else {
         Write-Log "✓ No changes for $([System.IO.Path]::GetFileName($FilePath))"
