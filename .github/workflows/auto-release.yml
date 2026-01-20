@@ -25,8 +25,8 @@ jobs:
         uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          version-file: './solve-wordle.csproj'
-          version-path: 'Version'
+          version-file: './version.json'
+          version-path: 'version'
           skip-on-empty: true
           skip-version-file: false
           skip-commit: false
@@ -35,6 +35,21 @@ jobs:
           tag-prefix: 'v'
           output-file: 'CHANGELOG.md'
           release-count: '0'  # Include all releases in changelog
+
+      - name: Update .csproj version
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        shell: pwsh
+        run: |
+          .\.github\scripts\update-csproj-version.ps1 -VersionJsonPath "./version.json" -CsprojPath "./solve-wordle.csproj"
+
+      - name: Commit .csproj version update
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: |
+          git config user.name "Conventional Changelog Action"
+          git config user.email "conventional.changelog.action@github.com"
+          git add solve-wordle.csproj
+          git commit -m "chore: sync .csproj version to ${{ steps.changelog.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git push
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
