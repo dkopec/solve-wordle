@@ -1,7 +1,10 @@
 name: Deploy Blazor WASM to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Auto Release"]
+    types:
+      - completed
     branches: [ main ]
   workflow_dispatch:
 
