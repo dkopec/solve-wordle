@@ -1,3 +1,11 @@
+## [1.2.0](https://github.com/dkopec/solve-wordle/compare/v1.1.2...v1.2.0) (2026-01-20)
+
+
+### Features
+
+* add Docker support with multi-stage builds for production and development environments ([392f42d](https://github.com/dkopec/solve-wordle/commit/392f42dde13195c1a3d7a0357ea472ff3c010c3b))
+* add version and GitHub link to footer in Index.razor ([47213c1](https://github.com/dkopec/solve-wordle/commit/47213c16aec6eb661f7e8eac8a45cfbb0a701cfb))
+
 ## [1.1.2](https://github.com/dkopec/solve-wordle/compare/v1.1.1...v1.1.2) (2026-01-20)
 
 
