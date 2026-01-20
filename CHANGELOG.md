@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/dkopec/solve-wordle/compare/v2.1.0...v2.1.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* subheader and link to wordle ([fae7b80](https://github.com/dkopec/solve-wordle/commit/fae7b809eefc6fa065bdc3df80bdc84734040515))
+
 ## [2.1.0](https://github.com/dkopec/solve-wordle/compare/v2.0.6...v2.1.0) (2026-01-20)
 
 
