@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+docs/
+*.md
+CHANGELOG.md
+CONTRIBUTING.md
+
+# Build artifacts
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Data backups (will be created by script)
+wwwroot/data/backups/
+
+# Node modules and libraries
+node_modules/
+wwwroot/lib/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Other scripts we don't need
+Scripts/*.ps1

@@ -1,0 +1,19 @@
+# Dockerfile for running word list update script
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install required Python packages
+RUN pip install --no-cache-dir requests beautifulsoup4 lxml
+
+# Copy the update script
+COPY Scripts/update-word-lists.py /app/update-word-lists.py
+
+# Create directories for data
+RUN mkdir -p /app/wwwroot/data
+
+# Set the entry point
+ENTRYPOINT ["python", "update-word-lists.py"]
+
+# Default arguments (can be overridden in docker-compose)
+CMD ["--verbose"]

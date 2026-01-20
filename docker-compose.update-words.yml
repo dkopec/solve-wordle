@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  update-word-lists:
+    build:
+      context: .
+      dockerfile: Dockerfile.update-words
+    container_name: wordle-word-updater
+    volumes:
+      # Mount wwwroot/data directory to persist changes
+      - ./wwwroot/data:/app/wwwroot/data
+      # Mount Scripts directory to use latest script without rebuilding
+      - ./Scripts/update-word-lists.py:/app/update-word-lists.py:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Override command here to add flags like --dry-run
+    # command: ["--dry-run", "--verbose"]
+    command: ["--verbose"]
