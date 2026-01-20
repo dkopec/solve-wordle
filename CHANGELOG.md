@@ -1,4 +1,11 @@
-## 1.1.0 (2026-01-20)
+## [1.1.1](https://github.com/dkopec/solve-wordle/compare/v1.1.0...v1.1.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* **ci:** correct regex pattern for .csproj version update and amend release commit process ([bdbdc0e](https://github.com/dkopec/solve-wordle/commit/bdbdc0e4f37077f5954910f3574972959782a7f4))
+
+## [1.1.0](https://github.com/dkopec/solve-wordle/compare/ec6618dbc80ca3ebe2e071b2262c34210460882a...v1.1.0) (2026-01-20)
 
 
 ### Features
