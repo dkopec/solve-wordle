@@ -1,3 +1,10 @@
+## [2.0.4](https://github.com/dkopec/solve-wordle/compare/v2.0.3...v2.0.4) (2026-01-20)
+
+
+### Bug Fixes
+
+* enhance focus management and error handling in Blazor WASM ([7510dce](https://github.com/dkopec/solve-wordle/commit/7510dce7270a0fc5d5a8a2336cb3d56fc841943b))
+
 ## [2.0.3](https://github.com/dkopec/solve-wordle/compare/v2.0.2...v2.0.3) (2026-01-20)
 
 
