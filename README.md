@@ -7,16 +7,20 @@ A Blazor WebAssembly application that helps you solve Wordle puzzles by filterin
 ## Features
 
 - **🌓 Dark Mode**: Toggle between light and dark themes with persistent preference
-- **📱 Responsive Layout**: Side-by-side columns for inputs and results
-- **⌨️ Smart Input**: Auto-advance focus as you type in letter grids
-- **🎯 Multiple Input Methods**:
-  - **Grid Input**: Visual 5x6 grid for green (correct position) and yellow (wrong position) letters
-  - **Quick Text Input**: Fast text entry for correct positions (e.g., `_a_e_`)
-  - **Gray Letters**: Enter excluded letters in bulk
+- **📱 Responsive Layout**: Interactive game board with visual feedback
+- **⌨️ Full Keyboard Navigation**: Complete hands-free solving with arrow keys, Tab, and Enter
+- **🎯 Interactive Word Selection**:
+  - Click suggested words to add them to your board
+  - Use arrow keys (←/→) to cycle through suggestions
+  - Press Enter to lock your guess
+  - Shuffle button for random suggestions
+  - Edit mode to manually type custom words
+- **🤖 Auto-Complete**: When only one word remains, it automatically fills and solves
 - **📊 Smart Suggestions**: 
-  - Best starting words ranked by letter frequency
-  - Guess-in-one possibilities
-  - Filtered word list based on your clues
+  - Best starting words ranked by effectiveness
+  - Real-time confidence scores and word elimination counts
+  - Filtered results based on all your clues
+- **🎨 Visual Feedback**: Click tiles to cycle colors (Gray → Yellow → Green)
 
 ## Getting Started
 
@@ -47,7 +51,34 @@ If you're using Visual Studio Code:
 
 ## How to Use
 
-### Grid Input Method
+### Interactive Game Board
+
+1. **Choose a starting word** - The first row auto-populates with optimal suggestions
+   - Use **←/→ arrow keys** or click arrows to cycle suggestions
+   - Click **shuffle** for a random word
+   - Click **edit** to type your own word
+
+2. **Enter it in Wordle** - Use the suggested word in your actual Wordle game
+
+3. **Mark the results** - Click each tile to set its color (or use Tab to navigate):
+   - **Gray**: Letter not in word
+   - **Yellow**: Letter in word, wrong position
+   - **Green**: Letter in correct position
+
+4. **Lock your guess** - Press **Enter** or click the **✓ checkmark**
+
+5. **Repeat** - The next row automatically fills with the best suggestion
+
+6. **Auto-solve** - When only one word remains, it completes automatically!
+
+### Keyboard Shortcuts
+
+- **Tab** - Navigate through letter tiles
+- **←/→** - Cycle word suggestions
+- **Enter** - Lock current guess
+- **Space** or **Click** - Change tile color
+
+### Old Grid Input Method (Legacy)
 
 1. **Green Letters (Correct Position)**: Click on cells in the grid and type letters that are in the correct position
 2. **Yellow Letters (Wrong Position)**: Type letters in yellow rows where they appear in the word but in wrong positions

@@ -77,6 +77,49 @@ The script will:
 
 ---
 
+## How to Use the Solver
+
+1. **Choose a starting word** - The app suggests optimal starting words
+   - Use arrow keys (←/→) or click arrows to cycle suggestions
+   - Press shuffle button for a random word
+   - Click edit button to type your own word
+
+2. **Enter it in Wordle** - Use the suggested word in your actual Wordle game
+
+3. **Mark the results**:
+   - Gray tiles: Letter not in word
+   - Yellow tiles: Letter in word, wrong position  
+   - Green tiles: Letter in correct position
+   - Use Tab to navigate tiles, Space/Click to change colors
+
+4. **Lock your guess** - Press Enter or click the checkmark ✓
+
+5. **Get next suggestion** - Based on your feedback, get the next best word
+
+6. **Repeat until solved!**
+   - When only one word remains, it auto-completes!
+
+### Keyboard Shortcuts
+
+- **Tab** - Navigate through letter tiles
+- **←/→** - Cycle word suggestions
+- **Enter** - Lock current guess
+- **Space/Click** - Change tile color (Gray → Yellow → Green)
+
+### Features
+
+- 🎯 **Smart suggestions** based on letter frequency and position analysis
+- ⌨️ **Full keyboard navigation** for hands-free solving
+- 🔄 **Real-time filtering** as you mark tiles
+- 🤖 **Auto-complete** when only one word remains
+- 📊 **Confidence scores** for each suggestion
+- ✏️ **Manual word entry** for custom guesses
+- 🎲 **Random suggestions** to try different approaches
+- 🌙 **Dark mode** support
+- 📱 **Mobile-friendly** responsive design
+
+---
+
 ## Troubleshooting
 
 ### Build Errors
