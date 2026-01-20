@@ -18,8 +18,8 @@ Write-Host "Updating .csproj version to: $newVersion"
 $csprojContent = Get-Content -Path $CsprojPath -Raw
 
 # Update version using regex
-$pattern = '(<Version>)[^<]+(</Version>)'
-$replacement = "`$1$newVersion`$2"
+$pattern = '<Version>[^<]+</Version>'
+$replacement = "<Version>$newVersion</Version>"
 $updatedContent = $csprojContent -replace $pattern, $replacement
 
 # Write back to file

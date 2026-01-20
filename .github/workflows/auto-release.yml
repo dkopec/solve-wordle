@@ -35,21 +35,24 @@ jobs:
           tag-prefix: 'v'
           output-file: 'CHANGELOG.md'
           release-count: '0'  # Include all releases in changelog
+          git-push: false  # Don't push yet - we need to update .csproj first
 
-      - name: Update .csproj version
+      - name: Update .csproj version to match
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         shell: pwsh
         run: |
           .\.github\scripts\update-csproj-version.ps1 -VersionJsonPath "./version.json" -CsprojPath "./solve-wordle.csproj"
 
-      - name: Commit .csproj version update
+      - name: Amend the release commit with .csproj changes
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: |
           git config user.name "Conventional Changelog Action"
           git config user.email "conventional.changelog.action@github.com"
           git add solve-wordle.csproj
-          git commit -m "chore: sync .csproj version to ${{ steps.changelog.outputs.version }} [skip ci]" || echo "No changes to commit"
-          git push
+          git commit --amend --no-edit
+          git tag -f ${{ steps.changelog.outputs.tag }}
+          git push --force-with-lease
+          git push --tags --force
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
