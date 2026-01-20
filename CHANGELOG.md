@@ -1,3 +1,10 @@
+## [2.1.0](https://github.com/dkopec/solve-wordle/compare/v2.0.6...v2.1.0) (2026-01-20)
+
+
+### Features
+
+* track statistics for player ([5311a2c](https://github.com/dkopec/solve-wordle/commit/5311a2cadfebdd969f4e979be7e94619b4759cb4))
+
 ## [2.0.6](https://github.com/dkopec/solve-wordle/compare/v2.0.5...v2.0.6) (2026-01-20)
 
 
