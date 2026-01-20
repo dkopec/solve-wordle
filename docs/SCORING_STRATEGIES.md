@@ -60,13 +60,14 @@ This solver uses multiple aggressive strategies to quickly identify the most lik
 - S, C, P, T, A, B, R, L, M, F are common starters
 - Slight boost for words starting with these
 
-### 11. **Unique Letter Diversity** 🌈
-- **5 unique letters** (1.3x multiplier): All unique - ideal for exploration
-- **4 unique letters** (1.0x - neutral): One repeated letter - very common in Wordle
+### 11. **Duplicate Letter Priority** 🔁
+- **5 unique letters** (0.8x penalty): All unique - no pattern matching benefit
+- **4 unique letters** (1.4x multiplier): One repeated letter - very common in Wordle
   - Examples: BATTY, FIZZY, HAPPY, PUPPY, GRASS
   - Many Wordle answers have double letters
-- **3 unique letters** (0.7x penalty): Two repeated letters - less common
-- **2 or fewer unique letters** (0.4x penalty): Heavy repetition - very rare
+- **3 unique letters** (1.8x multiplier): Two repeated letters - strong pattern match
+- **2 or fewer unique letters** (2.2x multiplier): Heavy repetition - highest bonus
+  - Examples: EERIE, MAMMA, LLAMA, COCOA, PEEPS
 
 ## Why Word Commonality Matters Most
 
@@ -151,11 +152,12 @@ Strategic words are selected based on:
    - Example: If letter 'R' is in 50% of possibilities, testing it splits the list in half
    - 30-40% or 60-75% coverage also valuable (12x multiplier)
 
-3. **Unique Letter Maximization (3.0x multiplier)**
-   - **INCREASED from 2.5x** - even stronger emphasis
-   - Prioritizes words with 5 unique letters
-   - Each letter tested provides independent information
-   - Repeated letters = wasted guess slots
+3. **Duplicate Letter Preference (2.5x multiplier)**
+   - **CHANGED from unique letter maximization**
+   - Now prioritizes words with repeated letters
+   - Helps identify patterns and common word structures
+   - 4 unique letters (one repeated) = 1.5x multiplier
+   - 3 or fewer unique letters = 2.5x multiplier
 
 4. **Position-Specific Testing**
    - Tests letters in positions where they commonly appear in remaining words

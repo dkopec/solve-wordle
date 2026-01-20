@@ -358,18 +358,18 @@ public class WordleSolver
             }
         }
 
-        // Strong bonus for 5 unique letters (maximum information)
+        // Bonus for duplicate letters (strategic pattern matching)
         if (uniqueLetters.Count == 5)
         {
-            score *= 3.0; // INCREASED from 2.5 - we want max elimination
+            score *= 0.5; // Penalty for all unique letters
         }
         else if (uniqueLetters.Count == 4)
         {
-            score *= 1.8; // INCREASED from 1.5
+            score *= 1.5; // Moderate bonus for one repeated letter
         }
         else
         {
-            score *= 0.3; // Heavy penalty for repeated letters - wasted information
+            score *= 2.5; // Strong bonus for repeated letters - helps identify patterns
         }
 
         // Prefer words with 2-3 vowels (typical word structure)
@@ -629,22 +629,22 @@ public class WordleSolver
             score *= 0.4; // Heavy penalty for unusual vowel counts
         }
 
-        // 6. Unique letter bonus (diverse letters still valuable)
+        // 6. Duplicate letter bonus (favors words with repeated letters)
         if (uniqueLetters.Count == 5)
         {
-            score *= 1.3; // Bonus for all unique letters
+            score *= 0.8; // Slight penalty for all unique letters
         }
         else if (uniqueLetters.Count == 4)
         {
-            score *= 1.0; // Neutral for one repeated letter (very common in Wordle)
+            score *= 1.4; // Bonus for one repeated letter (very common in Wordle)
         }
         else if (uniqueLetters.Count == 3)
         {
-            score *= 0.7; // Moderate penalty for two repeated letters
+            score *= 1.8; // Strong bonus for two repeated letters
         }
         else
         {
-            score *= 0.4; // Heavy penalty for 3+ repeated letters
+            score *= 2.2; // Highest bonus for heavy repetition (like EERIE, MAMMA)
         }
         
         // 7. Bonus if word was actually a past answer (pattern match)
