@@ -675,3 +675,46 @@ body {
 .loading-progress-text:after {
     content: var(--blazor-load-percentage-text, "Loading");
 }
+
+/* Statistics Panel Styling */
+.stat-box {
+    padding: 15px;
+    background-color: var(--bs-secondary-bg);
+    border-radius: 8px;
+}
+
+.stat-box h3 {
+    color: var(--bs-primary);
+    font-weight: bold;
+}
+
+.guess-distribution {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.guess-label {
+    width: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.guess-distribution .progress {
+    border-radius: 4px;
+}
+
+.guess-distribution .progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: width 0.6s ease;
+}
+
+.card-header {
+    user-select: none;
+}
+
+.card-header:hover {
+    background-color: var(--bs-secondary-bg);
+}

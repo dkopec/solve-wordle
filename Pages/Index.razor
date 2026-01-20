@@ -15,6 +15,91 @@
         </button>
     </div>
 
+    <!-- Statistics Panel -->
+    @if (isInitialized)
+    {
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" @onclick="ToggleStats">
+                <div>
+                    <i class="bi bi-graph-up"></i> 
+                    <strong>Your Statistics</strong>
+                    <span class="badge bg-primary ms-2">@totalVisits visit@(totalVisits != 1 ? "s" : "")</span>
+                    <span class="badge bg-success ms-1">@totalSolves solve@(totalSolves != 1 ? "s" : "")</span>
+                </div>
+                <i class="bi @(statsExpanded ? "bi-chevron-up" : "bi-chevron-down")"></i>
+            </div>
+            @if (statsExpanded)
+            {
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="stat-box">
+                                <h3 class="mb-0">@totalVisits</h3>
+                                <small class="text-muted">Total Visits</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-box">
+                                <h3 class="mb-0">@totalSolves</h3>
+                                <small class="text-muted">Puzzles Solved</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-box">
+                                <h3 class="mb-0">@(totalSolves > 0 ? Math.Round((double)totalSolves / totalVisits * 100, 1) : 0)%</h3>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (guessDistribution.Any())
+                    {
+                        <h6 class="mb-3"><i class="bi bi-bar-chart-fill"></i> Guess Distribution</h6>
+                        <div class="guess-distribution">
+                            @for (int i = 1; i <= 6; i++)
+                            {
+                                var count = guessDistribution.ContainsKey(i) ? guessDistribution[i] : 0;
+                                var maxCount = guessDistribution.Values.Any() ? guessDistribution.Values.Max() : 1;
+                                var percentage = maxCount > 0 ? (double)count / maxCount * 100 : 0;
+                                var hasValue = count > 0;
+                                
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="guess-label">@i</div>
+                                    <div class="progress flex-grow-1 mx-2" style="height: 30px;">
+                                        <div class="progress-bar @(hasValue ? "bg-success" : "bg-secondary")" 
+                                             role="progressbar" 
+                                             style="width: @(percentage)%; min-width: @(hasValue ? "30px" : "0px");"
+                                             aria-valuenow="@count" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="@maxCount">
+                                            @if (hasValue)
+                                            {
+                                                <span>@count</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-inbox"></i>
+                            <p class="mb-0">No solves yet. Start solving puzzles to see your distribution!</p>
+                        </div>
+                    }
+
+                    <div class="text-center mt-3">
+                        <button class="btn btn-sm btn-outline-danger" @onclick="ResetStatistics">
+                            <i class="bi bi-trash"></i> Reset Statistics
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     @if (!isInitialized)
     {
         <div class="alert alert-info">
@@ -400,8 +485,21 @@
     private List<Guess> guesses = new();
     private List<WordSuggestion>? possibleWords;
 
+    // Statistics tracking
+    private int totalVisits = 0;
+    private int totalSolves = 0;
+    private Dictionary<int, int> guessDistribution = new();
+    private bool statsExpanded = false;
+
     protected override async Task OnInitializedAsync()
     {
+        // Load statistics first
+        await LoadStatistics();
+        
+        // Track visit
+        totalVisits++;
+        await SaveStatistics();
+        
         // Initialize word list service
         await WordListService.InitializeAsync();
         
@@ -589,6 +687,20 @@
         if (allGreen)
         {
             isSolved = true;
+            
+            // Track solve statistics
+            totalSolves++;
+            int guessNumber = rowIndex + 1; // 1-based guess number
+            if (guessDistribution.ContainsKey(guessNumber))
+            {
+                guessDistribution[guessNumber]++;
+            }
+            else
+            {
+                guessDistribution[guessNumber] = 1;
+            }
+            await SaveStatistics();
+            
             return; // Don't populate next row
         }
 
@@ -636,6 +748,19 @@
                     }
                     nextGuess.IsLocked = true;
                     isSolved = true;
+                    
+                    // Track solve statistics
+                    totalSolves++;
+                    int guessNumber = rowIndex + 2; // Next row, 1-based
+                    if (guessDistribution.ContainsKey(guessNumber))
+                    {
+                        guessDistribution[guessNumber]++;
+                    }
+                    else
+                    {
+                        guessDistribution[guessNumber] = 1;
+                    }
+                    await SaveStatistics();
                 }
             }
         }
@@ -1083,5 +1208,74 @@
             Console.WriteLine($"Error building bug report URL: {ex.Message}");
             return $"{githubUrl}/issues/new?template=bug_report.yml&labels=bug";
         }
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            var visitsStr = await JS.InvokeAsync<string>("localStorage.getItem", "wordleSolverVisits");
+            var solvesStr = await JS.InvokeAsync<string>("localStorage.getItem", "wordleSolverSolves");
+            var distributionStr = await JS.InvokeAsync<string>("localStorage.getItem", "wordleSolverDistribution");
+            
+            if (!string.IsNullOrEmpty(visitsStr) && int.TryParse(visitsStr, out int visits))
+            {
+                totalVisits = visits;
+            }
+            
+            if (!string.IsNullOrEmpty(solvesStr) && int.TryParse(solvesStr, out int solves))
+            {
+                totalSolves = solves;
+            }
+            
+            if (!string.IsNullOrEmpty(distributionStr))
+            {
+                // Format: "1:5,2:10,3:8" (guess number : count)
+                var pairs = distributionStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var pair in pairs)
+                {
+                    var parts = pair.Split(':');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int guess) && int.TryParse(parts[1], out int count))
+                    {
+                        guessDistribution[guess] = count;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading statistics: {ex.Message}");
+        }
+    }
+
+    private async Task SaveStatistics()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "wordleSolverVisits", totalVisits.ToString());
+            await JS.InvokeVoidAsync("localStorage.setItem", "wordleSolverSolves", totalSolves.ToString());
+            
+            // Convert distribution to string format
+            var distributionStr = string.Join(",", guessDistribution.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+            await JS.InvokeVoidAsync("localStorage.setItem", "wordleSolverDistribution", distributionStr);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving statistics: {ex.Message}");
+        }
+    }
+
+    private async Task ResetStatistics()
+    {
+        totalVisits = 1; // Keep current visit
+        totalSolves = 0;
+        guessDistribution.Clear();
+        await SaveStatistics();
+        StateHasChanged();
+    }
+
+    private void ToggleStats()
+    {
+        statsExpanded = !statsExpanded;
     }
 }
