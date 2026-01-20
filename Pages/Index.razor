@@ -121,10 +121,19 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" @onclick="FindWords">
-                        <i class="bi bi-search"></i> Find Words
+                    <button type="button" class="btn btn-primary" @onclick="FindWords" disabled="@isFiltering">
+                        @if (isFiltering)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Filtering...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-search"></i>
+                            <span>Find Words</span>
+                        }
                     </button>
-                    <button type="button" class="btn btn-outline-secondary" @onclick="Reset">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="Reset" disabled="@isFiltering">
                         <i class="bi bi-arrow-counterclockwise"></i> Reset
                     </button>
                 </div>
@@ -133,7 +142,16 @@
         </div>
 
         <div class="col-lg-7 col-xl-8">
-            @if (solver != null && bestStartingWords.Any() && possibleWords == null)
+            @if (isFiltering)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Analyzing possible words...</p>
+                </div>
+            }
+            else if (solver != null && bestStartingWords.Any() && possibleWords == null)
             {
                 <div class="alert alert-info mb-4">
                     <h6 class="alert-heading mb-2"><i class="bi bi-lightbulb"></i> Best Starting Words:</h6>
@@ -361,6 +379,7 @@
         ?? "https://github.com/dkopec/solve-wordle";
     
     private bool isInitialized = false;
+    private bool isFiltering = false;
     private WordleSolver? solver;
     private List<string> bestStartingWords = new();
     private string? guessInOne;
@@ -599,49 +618,65 @@
         // Handled by JavaScript
     }
 
-    private void FindWords()
+    private async Task FindWords()
     {
         if (solver == null) return;
 
-        // Build correct positions string
-        var correctPositions = string.Join("", correctLetters.Select(l => string.IsNullOrEmpty(l) ? "_" : l.ToLower()));
+        // Set loading state
+        isFiltering = true;
+        StateHasChanged();
 
-        // Build wrong positions string
-        var wrongPositionsList = new List<string>();
-        for (int row = 0; row < wrongPositionRows.Count; row++)
+        // Add a small delay to ensure the loading animation displays
+        // (most operations are fast, but this provides visual feedback)
+        await Task.Delay(100);
+
+        try
         {
-            for (int pos = 0; pos < 5; pos++)
+            // Build correct positions string
+            var correctPositions = string.Join("", correctLetters.Select(l => string.IsNullOrEmpty(l) ? "_" : l.ToLower()));
+
+            // Build wrong positions string
+            var wrongPositionsList = new List<string>();
+            for (int row = 0; row < wrongPositionRows.Count; row++)
             {
-                var letter = wrongPositionRows[row][pos];
-                if (!string.IsNullOrEmpty(letter))
+                for (int pos = 0; pos < 5; pos++)
                 {
-                    wrongPositionsList.Add($"{letter.ToLower()}:{pos + 1}");
+                    var letter = wrongPositionRows[row][pos];
+                    if (!string.IsNullOrEmpty(letter))
+                    {
+                        wrongPositionsList.Add($"{letter.ToLower()}:{pos + 1}");
+                    }
                 }
             }
-        }
-        var wrongPositions = string.Join(", ", wrongPositionsList);
+            var wrongPositions = string.Join(", ", wrongPositionsList);
 
-        // Build excluded letters string
-        var excludedLetters = string.Join("", excludedLetterRows.SelectMany(r => r).Where(l => !string.IsNullOrEmpty(l)).Select(l => l.ToLower()));
+            // Build excluded letters string
+            var excludedLetters = string.Join("", excludedLetterRows.SelectMany(r => r).Where(l => !string.IsNullOrEmpty(l)).Select(l => l.ToLower()));
 
-        // Get results
-        possibleWords = solver.GetRankedSuggestions(
-            correctPositions,
-            wrongPositions,
-            excludedLetters,
-            excludePastAnswers
-        );
-
-        // Get strategic words
-        if (possibleWords != null && possibleWords.Any())
-        {
-            var possibleWordsList = possibleWords.Select(w => w.Word).ToList();
-            strategicWords = solver.GetStrategicWords(
-                possibleWordsList,
+            // Get results
+            possibleWords = solver.GetRankedSuggestions(
                 correctPositions,
+                wrongPositions,
                 excludedLetters,
-                5
+                excludePastAnswers
             );
+
+            // Get strategic words
+            if (possibleWords != null && possibleWords.Any())
+            {
+                var possibleWordsList = possibleWords.Select(w => w.Word).ToList();
+                strategicWords = solver.GetStrategicWords(
+                    possibleWordsList,
+                    correctPositions,
+                    excludedLetters,
+                    5
+                );
+            }
+        }
+        finally
+        {
+            // Clear loading state
+            isFiltering = false;
         }
     }
 
