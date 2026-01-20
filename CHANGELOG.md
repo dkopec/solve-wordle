@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/dkopec/solve-wordle/compare/v2.0.0...v2.0.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* **ui:** pressing enter in edit mode confirm guess ([c2f657f](https://github.com/dkopec/solve-wordle/commit/c2f657f1c13d3ce7b6ceb060def7cbaf22c89a4f))
+
 ## [2.0.0](https://github.com/dkopec/solve-wordle/compare/v1.3.1...v2.0.0) (2026-01-20)
 
 
