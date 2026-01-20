@@ -1,3 +1,10 @@
+## [2.0.3](https://github.com/dkopec/solve-wordle/compare/v2.0.2...v2.0.3) (2026-01-20)
+
+
+### Bug Fixes
+
+* bug report not prefilling info ([498561f](https://github.com/dkopec/solve-wordle/commit/498561faf1f34d4ff1961b134e2299307fce87cc))
+
 ## [2.0.2](https://github.com/dkopec/solve-wordle/compare/v2.0.1...v2.0.2) (2026-01-20)
 
 
