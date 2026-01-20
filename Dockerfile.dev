@@ -1,0 +1,22 @@
+# Development Dockerfile for Blazor WebAssembly app with hot reload
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+WORKDIR /app
+
+# Install dotnet-watch tool (included in SDK)
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+# Expose port
+EXPOSE 5000
+
+# Copy csproj and restore
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copy everything
+COPY . ./
+
+# Run with watch for hot reload
+CMD ["dotnet", "watch", "run", "--non-interactive", "--urls", "http://0.0.0.0:5000"]

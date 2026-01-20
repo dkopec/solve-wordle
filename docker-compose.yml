@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Production-like build with nginx
+  wordle-solver-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wordle-solver-prod
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - wordle-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Development mode with hot reload
+  wordle-solver-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: wordle-solver-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount source code for hot reload
+      - ./Pages:/app/Pages
+      - ./Shared:/app/Shared
+      - ./Models:/app/Models
+      - ./Services:/app/Services
+      - ./wwwroot:/app/wwwroot
+      - ./Controllers:/app/Controllers
+      # Exclude build artifacts
+      - /app/bin
+      - /app/obj
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+    networks:
+      - wordle-network
+    stdin_open: true
+    tty: true
+
+networks:
+  wordle-network:
+    driver: bridge
