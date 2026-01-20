@@ -361,15 +361,15 @@ public class WordleSolver
         // Bonus for duplicate letters (strategic pattern matching)
         if (uniqueLetters.Count == 5)
         {
-            score *= 0.5; // Penalty for all unique letters
+            score *= 1.0; // No penalty for all unique letters
         }
         else if (uniqueLetters.Count == 4)
         {
-            score *= 1.5; // Moderate bonus for one repeated letter
+            score *= 1.1; // Slight bonus for one repeated letter
         }
         else
         {
-            score *= 2.5; // Strong bonus for repeated letters - helps identify patterns
+            score *= 1.2; // Small bonus for repeated letters - helps identify patterns
         }
 
         // Prefer words with 2-3 vowels (typical word structure)
@@ -632,19 +632,19 @@ public class WordleSolver
         // 6. Duplicate letter bonus (favors words with repeated letters)
         if (uniqueLetters.Count == 5)
         {
-            score *= 0.8; // Slight penalty for all unique letters
+            score *= 1.0; // No penalty for all unique letters
         }
         else if (uniqueLetters.Count == 4)
         {
-            score *= 1.4; // Bonus for one repeated letter (very common in Wordle)
+            score *= 1.1; // Small bonus for one repeated letter (very common in Wordle)
         }
         else if (uniqueLetters.Count == 3)
         {
-            score *= 1.8; // Strong bonus for two repeated letters
+            score *= 1.15; // Slight bonus for two repeated letters
         }
         else
         {
-            score *= 2.2; // Highest bonus for heavy repetition (like EERIE, MAMMA)
+            score *= 1.2; // Small bonus for heavy repetition (like EERIE, MAMMA)
         }
         
         // 7. Bonus if word was actually a past answer (pattern match)
