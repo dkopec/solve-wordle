@@ -1,3 +1,10 @@
+## [2.2.0](https://github.com/dkopec/solve-wordle/compare/v2.1.2...v2.2.0) (2026-01-26)
+
+
+### Features
+
+* add 'Mark as Solved' button and functionality to update letter states and track solve statistics ([7b9ebdd](https://github.com/dkopec/solve-wordle/commit/7b9ebdd20c3b3e413813b2bca6aac62a9b119130))
+
 ## [2.1.2](https://github.com/dkopec/solve-wordle/compare/v2.1.1...v2.1.2) (2026-01-26)
 
 
