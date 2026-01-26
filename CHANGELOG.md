@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/dkopec/solve-wordle/compare/v2.1.1...v2.1.2) (2026-01-26)
+
+
+### Bug Fixes
+
+* enhance letter state inheritance for green and yellow letters in guesses ([5a3e2ea](https://github.com/dkopec/solve-wordle/commit/5a3e2eaaaeb64396d5a6ff83ec57dce92cc103b2))
+
 ## [2.1.1](https://github.com/dkopec/solve-wordle/compare/v2.1.0...v2.1.1) (2026-01-20)
 
 
