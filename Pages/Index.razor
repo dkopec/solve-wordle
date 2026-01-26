@@ -218,6 +218,11 @@
                                     title="Manually enter a word">
                                 <i class="bi bi-pencil"></i>
                             </button>
+                            <button class="btn btn-sm btn-success ms-2" 
+                                    @onclick="() => MarkAsSolved(rowIndex)"
+                                    title="Mark as solved - all letters correct">
+                                <i class="bi bi-trophy-fill"></i> Mark as Solved
+                            </button>
                         </div>
                     }
                     else if (guesses[rowIndex].IsLocked)
@@ -679,6 +684,40 @@
             LetterState.Green => LetterState.Gray,
             _ => LetterState.Gray
         };
+    }
+
+    private async Task MarkAsSolved(int rowIndex)
+    {
+        var guess = guesses[rowIndex];
+        
+        // Only allow if the row has a word and is not locked
+        if (string.IsNullOrEmpty(guess.Word) || guess.IsLocked)
+            return;
+
+        // Set all letter states to green
+        for (int i = 0; i < 5 && i < guess.Word.Length; i++)
+        {
+            guess.States[i] = LetterState.Green;
+        }
+        
+        // Lock the guess
+        guess.IsLocked = true;
+        
+        // Mark as solved
+        isSolved = true;
+        
+        // Track solve statistics
+        totalSolves++;
+        int guessNumber = rowIndex + 1; // 1-based guess number
+        if (guessDistribution.ContainsKey(guessNumber))
+        {
+            guessDistribution[guessNumber]++;
+        }
+        else
+        {
+            guessDistribution[guessNumber] = 1;
+        }
+        await SaveStatistics();
     }
 
     private void CycleSuggestion(int rowIndex, int direction)
