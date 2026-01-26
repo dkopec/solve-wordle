@@ -595,19 +595,52 @@
                 currentRow.States[i] = LetterState.Gray;
             }
             
-            // Inherit green letters from all previous locked guesses
+            // Inherit green and yellow letters from all previous locked guesses
             if (rowIndex > 0)
             {
                 foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
                 {
                     for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < currentRow.Word.Length; i++)
                     {
+                        var prevLetter = char.ToLower(prevGuess.Word[i]);
+                        var currLetter = char.ToLower(currentRow.Word[i]);
+                        
                         if (prevGuess.States[i] == LetterState.Green)
                         {
-                            // Check if the letter in the new word matches the green letter position
-                            if (char.ToLower(currentRow.Word[i]) == char.ToLower(prevGuess.Word[i]))
+                            if (currLetter == prevLetter)
                             {
                                 currentRow.States[i] = LetterState.Green;
+                            }
+                        }
+                        else if (prevGuess.States[i] == LetterState.Yellow)
+                        {
+                            if (currLetter == prevLetter)
+                            {
+                                currentRow.States[i] = LetterState.Yellow;
+                            }
+                        }
+                    }
+                }
+                
+                // Additional pass for yellow letters in different positions
+                foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+                {
+                    for (int prevIdx = 0; prevIdx < 5 && prevIdx < prevGuess.Word.Length; prevIdx++)
+                    {
+                        if (prevGuess.States[prevIdx] == LetterState.Yellow)
+                        {
+                            var yellowLetter = char.ToLower(prevGuess.Word[prevIdx]);
+                            
+                            for (int currIdx = 0; currIdx < 5 && currIdx < currentRow.Word.Length; currIdx++)
+                            {
+                                var currLetter = char.ToLower(currentRow.Word[currIdx]);
+                                
+                                if (currLetter == yellowLetter && 
+                                    currIdx != prevIdx && 
+                                    currentRow.States[currIdx] != LetterState.Green)
+                                {
+                                    currentRow.States[currIdx] = LetterState.Yellow;
+                                }
                             }
                         }
                     }
@@ -668,17 +701,50 @@
             guess.States[i] = LetterState.Gray;
         }
         
-        // Inherit green letters from all previous locked guesses
+        // Inherit green and yellow letters from all previous locked guesses
         foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
         {
             for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < guess.Word.Length; i++)
             {
+                var prevLetter = char.ToLower(prevGuess.Word[i]);
+                var currLetter = char.ToLower(guess.Word[i]);
+                
                 if (prevGuess.States[i] == LetterState.Green)
                 {
-                    // Check if the letter in the new word matches the green letter position
-                    if (char.ToLower(guess.Word[i]) == char.ToLower(prevGuess.Word[i]))
+                    if (currLetter == prevLetter)
                     {
                         guess.States[i] = LetterState.Green;
+                    }
+                }
+                else if (prevGuess.States[i] == LetterState.Yellow)
+                {
+                    if (currLetter == prevLetter)
+                    {
+                        guess.States[i] = LetterState.Yellow;
+                    }
+                }
+            }
+        }
+        
+        // Additional pass for yellow letters in different positions
+        foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+        {
+            for (int prevIdx = 0; prevIdx < 5 && prevIdx < prevGuess.Word.Length; prevIdx++)
+            {
+                if (prevGuess.States[prevIdx] == LetterState.Yellow)
+                {
+                    var yellowLetter = char.ToLower(prevGuess.Word[prevIdx]);
+                    
+                    for (int currIdx = 0; currIdx < 5 && currIdx < guess.Word.Length; currIdx++)
+                    {
+                        var currLetter = char.ToLower(guess.Word[currIdx]);
+                        
+                        if (currLetter == yellowLetter && 
+                            currIdx != prevIdx && 
+                            guess.States[currIdx] != LetterState.Green)
+                        {
+                            guess.States[currIdx] = LetterState.Yellow;
+                        }
                     }
                 }
             }
@@ -731,17 +797,59 @@
                     nextGuess.States[i] = LetterState.Gray;
                 }
                 
-                // Inherit green letters from all previous locked guesses
+                // Inherit green and yellow letters from all previous locked guesses
                 foreach (var prevGuess in guesses.Take(rowIndex + 1).Where(g => g.IsLocked))
                 {
                     for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < nextGuess.Word.Length; i++)
                     {
+                        var prevLetter = char.ToLower(prevGuess.Word[i]);
+                        var nextLetter = char.ToLower(nextGuess.Word[i]);
+                        
                         if (prevGuess.States[i] == LetterState.Green)
                         {
                             // Check if the letter in the new word matches the green letter position
-                            if (char.ToLower(nextGuess.Word[i]) == char.ToLower(prevGuess.Word[i]))
+                            if (nextLetter == prevLetter)
                             {
                                 nextGuess.States[i] = LetterState.Green;
+                            }
+                        }
+                        else if (prevGuess.States[i] == LetterState.Yellow)
+                        {
+                            // Mark yellow if this letter from previous guess appears in current word
+                            // but in a different position than where it was originally marked yellow
+                            if (nextLetter == prevLetter)
+                            {
+                                nextGuess.States[i] = LetterState.Yellow;
+                            }
+                        }
+                    }
+                }
+                
+                // Additional pass: Mark yellow any letters in new word that match yellow letters from previous guesses
+                // but appear in different positions
+                foreach (var prevGuess in guesses.Take(rowIndex + 1).Where(g => g.IsLocked))
+                {
+                    for (int prevIdx = 0; prevIdx < 5 && prevIdx < prevGuess.Word.Length; prevIdx++)
+                    {
+                        if (prevGuess.States[prevIdx] == LetterState.Yellow)
+                        {
+                            var yellowLetter = char.ToLower(prevGuess.Word[prevIdx]);
+                            
+                            // Check if this yellow letter appears anywhere in the new word
+                            for (int newIdx = 0; newIdx < 5 && newIdx < nextGuess.Word.Length; newIdx++)
+                            {
+                                var newLetter = char.ToLower(nextGuess.Word[newIdx]);
+                                
+                                // Mark yellow if:
+                                // - The letter matches
+                                // - It's in a different position
+                                // - It's not already marked as green
+                                if (newLetter == yellowLetter && 
+                                    newIdx != prevIdx && 
+                                    nextGuess.States[newIdx] != LetterState.Green)
+                                {
+                                    nextGuess.States[newIdx] = LetterState.Yellow;
+                                }
                             }
                         }
                     }
@@ -842,20 +950,50 @@
                     guess.States[i] = LetterState.Gray;
                 }
                 
-                // Inherit green letters from previous locked guess
-                if (rowIndex > 0)
+                // Inherit green and yellow letters from all previous locked guesses
+                foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
                 {
-                    var previousGuess = guesses[rowIndex - 1];
-                    if (previousGuess.IsLocked)
+                    for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < guess.Word.Length; i++)
                     {
-                        for (int i = 0; i < 5; i++)
+                        var prevLetter = char.ToLower(prevGuess.Word[i]);
+                        var currLetter = char.ToLower(guess.Word[i]);
+                        
+                        if (prevGuess.States[i] == LetterState.Green)
                         {
-                            if (previousGuess.States[i] == LetterState.Green && 
-                                guess.Word.Length > i && 
-                                previousGuess.Word.Length > i &&
-                                guess.Word[i] == previousGuess.Word[i])
+                            if (currLetter == prevLetter)
                             {
                                 guess.States[i] = LetterState.Green;
+                            }
+                        }
+                        else if (prevGuess.States[i] == LetterState.Yellow)
+                        {
+                            if (currLetter == prevLetter)
+                            {
+                                guess.States[i] = LetterState.Yellow;
+                            }
+                        }
+                    }
+                }
+                
+                // Additional pass for yellow letters in different positions
+                foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+                {
+                    for (int prevIdx = 0; prevIdx < 5 && prevIdx < prevGuess.Word.Length; prevIdx++)
+                    {
+                        if (prevGuess.States[prevIdx] == LetterState.Yellow)
+                        {
+                            var yellowLetter = char.ToLower(prevGuess.Word[prevIdx]);
+                            
+                            for (int currIdx = 0; currIdx < 5 && currIdx < guess.Word.Length; currIdx++)
+                            {
+                                var currLetter = char.ToLower(guess.Word[currIdx]);
+                                
+                                if (currLetter == yellowLetter && 
+                                    currIdx != prevIdx && 
+                                    guess.States[currIdx] != LetterState.Green)
+                                {
+                                    guess.States[currIdx] = LetterState.Yellow;
+                                }
                             }
                         }
                     }
@@ -921,9 +1059,60 @@
                     {
                         currentGuess.Word = currentGuess.AvailableSuggestions[0].ToUpper();
                         currentGuess.CurrentSuggestionIndex = 0;
+                        
+                        // Reset to gray first
                         for (int i = 0; i < 5; i++)
                         {
                             currentGuess.States[i] = LetterState.Gray;
+                        }
+                        
+                        // Inherit green and yellow letters from previous locked guesses
+                        foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+                        {
+                            for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < currentGuess.Word.Length; i++)
+                            {
+                                var prevLetter = char.ToLower(prevGuess.Word[i]);
+                                var currLetter = char.ToLower(currentGuess.Word[i]);
+                                
+                                if (prevGuess.States[i] == LetterState.Green)
+                                {
+                                    if (currLetter == prevLetter)
+                                    {
+                                        currentGuess.States[i] = LetterState.Green;
+                                    }
+                                }
+                                else if (prevGuess.States[i] == LetterState.Yellow)
+                                {
+                                    if (currLetter == prevLetter)
+                                    {
+                                        currentGuess.States[i] = LetterState.Yellow;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Additional pass for yellow letters in different positions
+                        foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+                        {
+                            for (int prevIdx = 0; prevIdx < 5 && prevIdx < prevGuess.Word.Length; prevIdx++)
+                            {
+                                if (prevGuess.States[prevIdx] == LetterState.Yellow)
+                                {
+                                    var yellowLetter = char.ToLower(prevGuess.Word[prevIdx]);
+                                    
+                                    for (int currIdx = 0; currIdx < 5 && currIdx < currentGuess.Word.Length; currIdx++)
+                                    {
+                                        var currLetter = char.ToLower(currentGuess.Word[currIdx]);
+                                        
+                                        if (currLetter == yellowLetter && 
+                                            currIdx != prevIdx && 
+                                            currentGuess.States[currIdx] != LetterState.Green)
+                                        {
+                                            currentGuess.States[currIdx] = LetterState.Yellow;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1037,20 +1226,50 @@
                     guess.States[i] = LetterState.Gray;
                 }
                 
-                // Inherit green letters from previous guess if available
-                if (rowIndex > 0)
+                // Inherit green and yellow letters from all previous locked guesses
+                foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
                 {
-                    var previousGuess = guesses[rowIndex - 1];
-                    if (previousGuess.IsLocked)
+                    for (int i = 0; i < 5 && i < prevGuess.Word.Length && i < guess.Word.Length; i++)
                     {
-                        for (int i = 0; i < 5; i++)
+                        var prevLetter = char.ToLower(prevGuess.Word[i]);
+                        var currLetter = char.ToLower(guess.Word[i]);
+                        
+                        if (prevGuess.States[i] == LetterState.Green)
                         {
-                            if (previousGuess.States[i] == LetterState.Green && 
-                                guess.Word.Length > i && 
-                                previousGuess.Word.Length > i &&
-                                guess.Word[i] == previousGuess.Word[i])
+                            if (currLetter == prevLetter)
                             {
                                 guess.States[i] = LetterState.Green;
+                            }
+                        }
+                        else if (prevGuess.States[i] == LetterState.Yellow)
+                        {
+                            if (currLetter == prevLetter)
+                            {
+                                guess.States[i] = LetterState.Yellow;
+                            }
+                        }
+                    }
+                }
+                
+                // Additional pass for yellow letters in different positions
+                foreach (var prevGuess in guesses.Take(rowIndex).Where(g => g.IsLocked))
+                {
+                    for (int prevIdx = 0; prevIdx < 5 && prevIdx < prevGuess.Word.Length; prevIdx++)
+                    {
+                        if (prevGuess.States[prevIdx] == LetterState.Yellow)
+                        {
+                            var yellowLetter = char.ToLower(prevGuess.Word[prevIdx]);
+                            
+                            for (int currIdx = 0; currIdx < 5 && currIdx < guess.Word.Length; currIdx++)
+                            {
+                                var currLetter = char.ToLower(guess.Word[currIdx]);
+                                
+                                if (currLetter == yellowLetter && 
+                                    currIdx != prevIdx && 
+                                    guess.States[currIdx] != LetterState.Green)
+                                {
+                                    guess.States[currIdx] = LetterState.Yellow;
+                                }
                             }
                         }
                     }
