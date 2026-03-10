@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/dkopec/solve-wordle/compare/v2.2.0...v2.2.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* double letter guesses not filtering properly ([b9214e5](https://github.com/dkopec/solve-wordle/commit/b9214e5fa92e948e6a26690cd0c67715de210178))
+
 ## [2.2.0](https://github.com/dkopec/solve-wordle/compare/v2.1.2...v2.2.0) (2026-01-26)
 
 
