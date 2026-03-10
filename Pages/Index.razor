@@ -1190,36 +1190,80 @@
             // Extract wrong positions and excluded letters from locked guesses only
             var wrongPositionsList = new List<string>();
             var excludedLetters = new HashSet<char>();
+            var lockedGuesses = guesses.Where(g => g.IsLocked && !string.IsNullOrEmpty(g.Word)).ToList();
+            var exactLetterCounts = new Dictionary<char, int>();
 
-            foreach (var guess in guesses.Where(g => g.IsLocked && !string.IsNullOrEmpty(g.Word)))
+            // First pass: collect all green and yellow letters across ALL locked guesses
+            // Also detect exact letter counts when duplicate letters have mixed states
+            var greenOrYellowLetters = new HashSet<char>();
+            var letterCountsByGuess = new Dictionary<char, (int greenYellowCount, bool hasGray)>();
+            
+            foreach (var guess in lockedGuesses)
+            {
+                // Track letter states within this guess
+                var letterStatesInGuess = new Dictionary<char, List<LetterState>>();
+                
+                for (int i = 0; i < 5 && i < guess.Word.Length; i++)
+                {
+                    var letter = char.ToLower(guess.Word[i]);
+                    var state = guess.States[i];
+
+                    if (!letterStatesInGuess.ContainsKey(letter))
+                    {
+                        letterStatesInGuess[letter] = new List<LetterState>();
+                    }
+                    letterStatesInGuess[letter].Add(state);
+
+                    if (state == LetterState.Green)
+                    {
+                        correctPositions[i] = letter;
+                        greenOrYellowLetters.Add(letter);
+                    }
+                    else if (state == LetterState.Yellow)
+                    {
+                        wrongPositionsList.Add($"{letter}:{i + 1}");
+                        greenOrYellowLetters.Add(letter);
+                    }
+                }
+
+                // Detect exact letter counts: if a letter appears multiple times
+                // with some green/yellow and some gray, the answer has exactly
+                // as many as the green/yellow count
+                foreach (var kvp in letterStatesInGuess)
+                {
+                    var letter = kvp.Key;
+                    var states = kvp.Value;
+                    
+                    if (states.Count > 1) // Letter appears multiple times in this guess
+                    {
+                        var greenYellowCount = states.Count(s => s == LetterState.Green || s == LetterState.Yellow);
+                        var grayCount = states.Count(s => s == LetterState.Gray);
+                        
+                        // If we have both green/yellow AND gray, we know the exact count
+                        if (greenYellowCount > 0 && grayCount > 0)
+                        {
+                            // Update exact count if we haven't seen it or if this is more specific
+                            if (!exactLetterCounts.ContainsKey(letter) || exactLetterCounts[letter] < greenYellowCount)
+                            {
+                                exactLetterCounts[letter] = greenYellowCount;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Second pass: collect gray letters, but only if they're not green/yellow anywhere
+            foreach (var guess in lockedGuesses)
             {
                 for (int i = 0; i < 5 && i < guess.Word.Length; i++)
                 {
                     var letter = char.ToLower(guess.Word[i]);
                     var state = guess.States[i];
 
-                    if (state == LetterState.Green)
+                    if (state == LetterState.Gray)
                     {
-                        correctPositions[i] = letter;
-                    }
-                    else if (state == LetterState.Yellow)
-                    {
-                        wrongPositionsList.Add($"{letter}:{i + 1}");
-                    }
-                    else if (state == LetterState.Gray)
-                    {
-                        // Only exclude if it's not marked as green or yellow elsewhere
-                        bool isInWordElsewhere = false;
-                        for (int j = 0; j < 5 && j < guess.Word.Length; j++)
-                        {
-                            if (char.ToLower(guess.Word[j]) == letter && 
-                                (guess.States[j] == LetterState.Green || guess.States[j] == LetterState.Yellow))
-                            {
-                                isInWordElsewhere = true;
-                                break;
-                            }
-                        }
-                        if (!isInWordElsewhere)
+                        // Only exclude if it's not marked as green or yellow in ANY locked guess
+                        if (!greenOrYellowLetters.Contains(letter))
                         {
                             excludedLetters.Add(letter);
                         }
@@ -1236,7 +1280,8 @@
                 correctPositionsStr,
                 wrongPositionsStr,
                 excludedLettersStr,
-                false // Don't exclude past answers by default in new UI
+                false, // Don't exclude past answers by default in new UI
+                exactLetterCounts.Any() ? exactLetterCounts : null
             );
         }
         finally

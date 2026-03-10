@@ -141,9 +141,10 @@ public class WordleSolver
         string correctPositions,
         string wrongPositions,
         string excludedLetters,
-        bool excludePastAnswers = true)
+        bool excludePastAnswers = true,
+        Dictionary<char, int>? exactLetterCounts = null)
     {
-        var suggestions = GetRankedSuggestions(correctPositions, wrongPositions, excludedLetters, excludePastAnswers);
+        var suggestions = GetRankedSuggestions(correctPositions, wrongPositions, excludedLetters, excludePastAnswers, exactLetterCounts);
         return suggestions.Select(s => s.Word).ToList();
     }
 
@@ -151,7 +152,8 @@ public class WordleSolver
         string correctPositions,
         string wrongPositions,
         string excludedLetters,
-        bool excludePastAnswers = true)
+        bool excludePastAnswers = true,
+        Dictionary<char, int>? exactLetterCounts = null)
     {
         var possibleWords = new List<string>(_wordList);
 
@@ -163,6 +165,12 @@ public class WordleSolver
 
         // Filter by excluded letters (gray letters)
         possibleWords = FilterByExcludedLetters(possibleWords, excludedLetters);
+
+        // Filter by exact letter counts (when duplicate letters have mixed states)
+        if (exactLetterCounts != null && exactLetterCounts.Any())
+        {
+            possibleWords = FilterByExactLetterCounts(possibleWords, exactLetterCounts);
+        }
 
         // Exclude previous Wordle answers
         if (excludePastAnswers)
@@ -499,6 +507,24 @@ public class WordleSolver
         return words.Where(word =>
             !excluded.Any(letter => word.Contains(letter))
         ).ToList();
+    }
+
+    private List<string> FilterByExactLetterCounts(List<string> words, Dictionary<char, int> exactLetterCounts)
+    {
+        return words.Where(word =>
+        {
+            foreach (var kvp in exactLetterCounts)
+            {
+                var letter = kvp.Key;
+                var exactCount = kvp.Value;
+                var actualCount = word.Count(c => c == letter);
+                
+                // Word must have exactly this many instances of the letter
+                if (actualCount != exactCount)
+                    return false;
+            }
+            return true;
+        }).ToList();
     }
 
     public List<string> GetBestStartingWords(int count = 5)
