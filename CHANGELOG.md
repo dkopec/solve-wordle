@@ -1,3 +1,10 @@
+## [2.2.2](https://github.com/dkopec/solve-wordle/compare/v2.2.1...v2.2.2) (2026-05-15)
+
+
+### Bug Fixes
+
+* sequential guessing ([ae7fa24](https://github.com/dkopec/solve-wordle/commit/ae7fa24e019d75ab27a13cde29dfbb0ae2548b9c))
+
 ## [2.2.1](https://github.com/dkopec/solve-wordle/compare/v2.2.0...v2.2.1) (2026-03-10)
 
 
