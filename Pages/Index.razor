@@ -1274,6 +1274,8 @@
             var correctPositionsStr = new string(correctPositions);
             var wrongPositionsStr = string.Join(", ", wrongPositionsList);
             var excludedLettersStr = string.Join("", excludedLetters);
+            var nextGuessNumber = lockedGuesses.Count + 1;
+            var preferEliminationGuess = nextGuessNumber >= 2 && nextGuessNumber % 2 == 0;
 
             // Get results
             possibleWords = solver.GetRankedSuggestions(
@@ -1281,7 +1283,8 @@
                 wrongPositionsStr,
                 excludedLettersStr,
                 false, // Don't exclude past answers by default in new UI
-                exactLetterCounts.Any() ? exactLetterCounts : null
+                exactLetterCounts.Any() ? exactLetterCounts : null,
+                preferEliminationGuess
             );
         }
         finally

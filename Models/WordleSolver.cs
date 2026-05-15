@@ -153,7 +153,8 @@ public class WordleSolver
         string wrongPositions,
         string excludedLetters,
         bool excludePastAnswers = true,
-        Dictionary<char, int>? exactLetterCounts = null)
+        Dictionary<char, int>? exactLetterCounts = null,
+        bool preferEliminationGuess = false)
     {
         var possibleWords = new List<string>(_wordList);
 
@@ -203,12 +204,35 @@ public class WordleSolver
             })
             .ToList();
 
+        if (ShouldPreferEliminationGuess(preferEliminationGuess, possibleWords.Count))
+        {
+            var strategicWords = GetStrategicWords(possibleWords, correctPositions, wrongPositions, excludedLetters, count: 5);
+            if (strategicWords.Any())
+            {
+                var strategicWordSet = strategicWords
+                    .Select(suggestion => suggestion.Word)
+                    .ToHashSet();
+
+                suggestions = strategicWords
+                    .Concat(suggestions.Where(suggestion => !strategicWordSet.Contains(suggestion.Word)))
+                    .Select((item, index) => new WordSuggestion
+                    {
+                        Word = item.Word,
+                        Score = item.Score,
+                        Rank = index + 1,
+                        ConfidencePercentage = item.ConfidencePercentage
+                    })
+                    .ToList();
+            }
+        }
+
         return suggestions;
     }
 
     public List<WordSuggestion> GetStrategicWords(
         List<string> possibleWords,
         string correctPositions,
+        string wrongPositions = "",
         string excludedLetters = "",
         int count = 5)
     {
@@ -218,15 +242,29 @@ public class WordleSolver
         if (possibleWords.Count == 0)
             return new List<WordSuggestion>(); // No suggestions if no possibilities
 
-        // Extract green (correct) letters to EXCLUDE from strategic words
-        var greenLetters = new HashSet<char>();
+        // Extract already-confirmed letters to exclude from strategic guesses.
+        // Strategic guesses should spend all five slots on letters we have not tested yet.
+        var knownLetters = new HashSet<char>();
         if (!string.IsNullOrWhiteSpace(correctPositions))
         {
             foreach (var c in correctPositions)
             {
                 if (c != '_' && c != ' ')
                 {
-                    greenLetters.Add(char.ToLower(c));
+                    knownLetters.Add(char.ToLower(c));
+                }
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(wrongPositions))
+        {
+            var entries = wrongPositions.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var entry in entries)
+            {
+                var parts = entry.Trim().Split(':', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[0]))
+                {
+                    knownLetters.Add(char.ToLower(parts[0][0]));
                 }
             }
         }
@@ -260,8 +298,8 @@ public class WordleSolver
             {
                 var letter = word[i];
                 
-                // Skip green letters - we already know these are correct
-                if (greenLetters.Contains(letter))
+                // Skip letters we have already confirmed somewhere in the answer.
+                if (knownLetters.Contains(letter))
                     continue;
                 
                 // Count how many possible words contain each letter
@@ -279,12 +317,12 @@ public class WordleSolver
         // Find words that cover the most uncertain letters
         var strategicWords = _wordList
             .Where(w => !possibleWords.Contains(w)) // Don't suggest words already in possible answers
-            .Where(w => !greenLetters.Any(gl => w.Contains(gl))) // CRITICAL: Exclude words with ANY green letters
+            .Where(w => !knownLetters.Any(knownLetter => w.Contains(knownLetter))) // Exclude already-guessed present letters
             .Where(w => !grayLetters.Any(el => w.Contains(el))) // CRITICAL: Exclude words with ANY excluded letters
             .Select(word => new
             {
                 Word = word,
-                Score = CalculateStrategicScore(word, letterCoverage, positionLetterCoverage, possibleWords.Count, greenLetters, grayLetters)
+                Score = CalculateStrategicScore(word, letterCoverage, positionLetterCoverage, possibleWords.Count, knownLetters, grayLetters)
             })
             .OrderByDescending(w => w.Score)
             .Take(count)
@@ -305,7 +343,7 @@ public class WordleSolver
         Dictionary<char, int> letterCoverage,
         Dictionary<int, Dictionary<char, int>> positionLetterCoverage,
         int totalPossibleWords,
-        HashSet<char> greenLetters,
+        HashSet<char> knownLetters,
         HashSet<char> grayLetters)
     {
         double score = 0;
@@ -317,8 +355,8 @@ public class WordleSolver
         {
             var letter = word[i];
             
-            // CRITICAL: Skip and penalize if word contains any green letters
-            if (greenLetters.Contains(letter))
+            // Strategic guesses only help if they spend letters on unknown information.
+            if (knownLetters.Contains(letter))
             {
                 return 0; // Disqualify this word entirely
             }
@@ -366,19 +404,7 @@ public class WordleSolver
             }
         }
 
-        // Bonus for duplicate letters (strategic pattern matching)
-        if (uniqueLetters.Count == 5)
-        {
-            score *= 1.0; // No penalty for all unique letters
-        }
-        else if (uniqueLetters.Count == 4)
-        {
-            score *= 1.1; // Slight bonus for one repeated letter
-        }
-        else
-        {
-            score *= 1.2; // Small bonus for repeated letters - helps identify patterns
-        }
+        score *= GetRepetitionMultiplier(word, preferUniqueLetters: true);
 
         // Prefer words with 2-3 vowels (typical word structure)
         if (vowelCount >= 2 && vowelCount <= 3)
@@ -404,6 +430,16 @@ public class WordleSolver
         }
 
         return score;
+    }
+
+    private static bool ShouldPreferEliminationGuess(bool preferEliminationGuess, int possibleWordCount)
+    {
+        if (!preferEliminationGuess || possibleWordCount <= 2)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private double CalculateConfidence(double score, double maxScore, double minScore, double scoreRange, int totalWords)
@@ -655,23 +691,8 @@ public class WordleSolver
             score *= 0.4; // Heavy penalty for unusual vowel counts
         }
 
-        // 6. Duplicate letter bonus (favors words with repeated letters)
-        if (uniqueLetters.Count == 5)
-        {
-            score *= 1.0; // No penalty for all unique letters
-        }
-        else if (uniqueLetters.Count == 4)
-        {
-            score *= 1.1; // Small bonus for one repeated letter (very common in Wordle)
-        }
-        else if (uniqueLetters.Count == 3)
-        {
-            score *= 1.15; // Slight bonus for two repeated letters
-        }
-        else
-        {
-            score *= 1.2; // Small bonus for heavy repetition (like EERIE, MAMMA)
-        }
+        // 6. Penalize duplicate-heavy words so rankings prefer broader coverage and fewer triple letters.
+        score *= GetRepetitionMultiplier(word, preferUniqueLetters: false);
         
         // 7. Bonus if word was actually a past answer (pattern match)
         if (_pastAnswers.Contains(word))
@@ -709,5 +730,34 @@ public class WordleSolver
         }
 
         return score;
+    }
+
+    private static double GetRepetitionMultiplier(string word, bool preferUniqueLetters)
+    {
+        var letterCounts = new Dictionary<char, int>();
+        foreach (var letter in word)
+        {
+            letterCounts[letter] = letterCounts.GetValueOrDefault(letter, 0) + 1;
+        }
+
+        var repeatedLetterSlots = letterCounts.Values.Sum(count => Math.Max(0, count - 1));
+        var maxRepeatCount = letterCounts.Values.Max();
+
+        if (repeatedLetterSlots == 0)
+        {
+            return preferUniqueLetters ? 1.18 : 1.06;
+        }
+
+        if (maxRepeatCount >= 3)
+        {
+            return preferUniqueLetters ? 0.28 : 0.42;
+        }
+
+        if (repeatedLetterSlots >= 2)
+        {
+            return preferUniqueLetters ? 0.62 : 0.78;
+        }
+
+        return preferUniqueLetters ? 0.86 : 0.93;
     }
 }
